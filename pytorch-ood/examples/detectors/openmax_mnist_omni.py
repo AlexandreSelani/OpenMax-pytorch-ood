@@ -27,17 +27,19 @@ import torch
 import torchvision.transforms as transforms
 import torch.nn as nn
 import torch.optim as optim
-from pytorch_ood.dataset.img import Textures,MNIST_OSR_TRAIN
 from pytorch_ood.detector import OpenMax
-from pytorch_ood.model import PlainCNN,WideResNet,SimpleMNIST_CNN
+from pytorch_ood.model import PlainCNN
 from pytorch_ood.utils import OODMetrics, ToUnknown, fix_random_seed, metricasImplementadas,AnaliseGrafica_OpenMax
-import numpy as np
+from pytorch_ood.utils.aux_dataset import *
 
-fix_random_seed(777)
+seed = 777
+fix_random_seed(seed)
 
 device = "cuda:0"
 
 ood_metrics = OODMetrics()
+
+
 def test(test_loader,detector):
     predicts=[]
     labels=[]
@@ -47,14 +49,11 @@ def test(test_loader,detector):
         with torch.no_grad():
             score = detector(X.to(device))
             
-
-            #print(score[:10])
             max_values, predicted = torch.max(score, dim=1)
             predict = torch.where(max_values >= detector.epsilon, predicted, torch.zeros_like(predicted))
 
-        #print(predict)
+        
         predicts.append(predict.detach().cpu())
-
         labels.append(y.detach().cpu())
         
     
@@ -70,7 +69,7 @@ def test(test_loader,detector):
    
     
 
-def train(train_loader,model,criterion,optimizer,detector):
+def train(train_loader,model,criterion,optimizer):
     model.train()
     train_loss = 0
     correct = 0
@@ -93,35 +92,62 @@ def train(train_loader,model,criterion,optimizer,detector):
     return train_loss/(batch_idx+1), correct/total
 # %%
 
+def validation(val_loader,model,criterion):
+    model.eval()
+    val_loss = 0
+    correct = 0
+    total = 0
+
+    for batch_idx, (inputs, targets) in enumerate(val_loader):
+        inputs, targets = inputs.to(device), targets.to(device)
+        
+        with torch.no_grad():
+            outputs = model(inputs)
+            loss = criterion(outputs, targets)
+
+        val_loss += loss.item()
+        _, predicted = outputs.max(1)
+        total += targets.size(0)
+        correct += predicted.eq(targets).sum().item()
+
+    return val_loss/(batch_idx+1), correct/total
 def main():
     nomeDataset = "Mnist + omniglot"
+
     analiseGrafica = AnaliseGrafica_OpenMax(nomeDataset)
+
+    lr=0.05
+    epochs = 5
+    bs=128
+
     # Setup preprocessing and data
     MNIST_trans = transforms.Compose([
     transforms.Resize(28),
     transforms.ToTensor()
     ])
 
-    #UUC_classes = [9]
-    # dataset_train = MNIST_OSR_TRAIN(root="data", train=True, download=True, transform=MNIST_trans,UUC_classes=UUC_classes)
-    # dataset_test = MNIST_OSR_TRAIN(root="data", train=False, download=True, transform=MNIST_trans,UUC_classes=UUC_classes)
 
-    dataset_train = MNIST(root="data", train=True, download=True, transform=MNIST_trans)
+    mnist = MNIST(root="data", train=True, download=True, transform=MNIST_trans)
+
+    dataset_train,dataset_val = validation_split(0.1,mnist,seed)
+
     dataset_in_test = MNIST(root="data", train=False, download=True, transform=MNIST_trans)
 
     dataset_out_test = Omniglot(
          root="data", download=True,background=False, transform=MNIST_trans, target_transform=ToUnknown()
      )
+    
+    novo_tamanho=10000
+    novo_dataset_out_test = random_dataset(dataset_out_test,novo_tamanho)
 
-    train_loader = DataLoader(dataset_train, batch_size=64, shuffle=True)
+    print(f"tamanho treino mnist {len(dataset_train)}\n tamanho teste mnist {len(dataset_in_test)}\n tamanho teste omniglot {len(novo_dataset_out_test)}")
+    train_loader = DataLoader(dataset_train, batch_size=bs, shuffle=True)
+    val_loader = DataLoader(dataset_val,batch_size=bs,shuffle=False)
 
-    # create data loaders
-    #test_loader = DataLoader(dataset_test, batch_size=64,shuffle=True)
 
-    test_loader = DataLoader(dataset_in_test+dataset_out_test, batch_size=64,shuffle=True)
+    test_loader = DataLoader(dataset_in_test+novo_dataset_out_test, batch_size=bs,shuffle=False)
 
-    lr=0.0003
-    epochs = 15
+    
 
     tailsize=20
     alpha=4
@@ -130,20 +156,26 @@ def main():
 
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.SGD(model.parameters(), lr=lr, momentum=0.9, weight_decay=5e-4)
+    scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=30, gamma=0.5)
 
-    detector = OpenMax(model, tailsize=tailsize, alpha=alpha, euclid_weight=0.5,epsilon=epsilon)
+    detector = OpenMax(model, tailsize=tailsize, alpha=alpha, euclid_weight=1,epsilon=epsilon)
 
     for epoch in range(epochs):
-        loss, acc = train(train_loader, model, criterion, optimizer, detector)
+        train_loss, train_acc = train(train_loader, model, criterion, optimizer)
+        val_loss, val_acc = validation(val_loader,model,criterion)
+
         
-        print(f"Epoch {epoch+1}/{epochs} | Loss: {loss:.4f} | Acc: {acc:.4f}")
+        print(f"Epoch {epoch+1}/{epochs} | Loss: {train_loss:.4f} | Acc: {train_acc:.4f}| lr = {optimizer.param_groups[0]['lr']}")
         
         
-        if(epoch>-1):    
-            detector.fit(train_loader, device=device)
-            metricas = test(test_loader,detector)
-            print(metricas)
-            analiseGrafica.addEpoch(metricas,epoch)
+           
+        detector.fit(train_loader, device=device)
+        metricas = test(test_loader,detector)
+        scheduler.step()
+        print(metricas)
+        analiseGrafica.addEpoch(metricas,epoch,train_loss=train_loss,train_acc=train_acc,val_loss=val_loss,val_acc=val_acc)
+
+
     analiseGrafica.mostraGrafico(tail=tailsize,alpha=alpha,epsilon=epsilon)
         
 

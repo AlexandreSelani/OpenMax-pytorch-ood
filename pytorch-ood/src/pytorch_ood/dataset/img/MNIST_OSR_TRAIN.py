@@ -16,7 +16,7 @@ class MNIST_OSR_TRAIN(MNIST):
         super().__init__(root=root, train=train, transform=transform,
                          target_transform=target_transform, download=download)
 
-      
+        self.targets_antigos=[]
         self.classes_removidas = torch.tensor(UUC_classes)
 
         if train:
@@ -27,9 +27,13 @@ class MNIST_OSR_TRAIN(MNIST):
             
 
         else:
-            print(f"self.targets = {self.targets[:50]}")
+            self.targets_antigos = self.targets.clone().detach()
+
             self.targets = torch.tensor([
                 x.item() if x not in UUC_classes else -1
                 for x in self.targets
             ])
-            print(f"self.targets NOVO = {self.targets[:50]}")
+            #print(f"self.targets NOVO = {self.targets[:80]}")
+
+    def get_targets_antigos(self):
+        return self.targets_antigos
