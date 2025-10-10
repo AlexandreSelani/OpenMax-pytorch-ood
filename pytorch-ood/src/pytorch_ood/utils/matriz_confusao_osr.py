@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 import torch
 import numpy as np
-
+import matplotlib.colors as mcolors
 
 
 class Matriz_confusao_osr:
@@ -51,39 +51,57 @@ class Matriz_confusao_osr:
             return
 
         fig, ax = plt.subplots(figsize=(10, 8))
-        cax = ax.imshow(self.matriz, interpolation='nearest', cmap='Blues')
+
+        # --- SOLUÇÃO: Valores > 0 em azul, Valor 0 em branco ---
+
+        # 1. Copiamos um colormap existente. 'Blues' é ótimo para isso.
+        cmap = plt.get_cmap('Blues').copy()
+
+        # 2. Definimos a cor para valores "abaixo" do nosso intervalo.
+        #    Como nosso intervalo começará em 1, o 0 será pintado de branco.
+        cmap.set_under('white')
+        # Esta é a abordagem correta para o seu objetivo
+        cores = ["#FFFFFF", 'royalblue']
+        cmap = mcolors.LinearSegmentedColormap.from_list('custom_lighter_blue', cores)
+
+        # 3. Criamos uma normalização. O gradiente de cor será aplicado
+        #    apenas a valores entre vmin e vmax.
+        #    Qualquer valor < vmin (ou seja, 0) usará a cor de .set_under().
+        norm = mcolors.Normalize(vmin=1, vmax=self.matriz.max())
+        
+        # 4. Usamos o cmap e a normalização personalizados no imshow.
+        cax = ax.imshow(self.matriz, interpolation='nearest', cmap=cmap, norm=norm)
         fig.colorbar(cax)
 
         ax.set_title("Matriz de Confusão OSR", pad=20)
 
-        
-
         # Eixo Y = previsão (linha 0 é "desconhecido")
         linhas_ordenadas = sorted(self.mapa_de_linhas.items(), key=lambda x: x[1])
-        row_labels = ['Desconhecido'] + [str(classe) for classe, idx in linhas_ordenadas if idx != 0]
+        row_labels = ['Desconhecido'] + [str(classe-1) for classe, idx in linhas_ordenadas if idx != 0]
 
         ax.set_xticks(np.arange(len(self.col_labels)))
-        ax.set_xticklabels(self.col_labels)
+        ax.set_xticklabels(self.col_labels, rotation=45, ha="left")
 
         ax.set_yticks(np.arange(len(row_labels)))
         ax.set_yticklabels(row_labels)
 
-        # Coloca os labels do eixo X no topo
         ax.xaxis.set_label_position('top')
         ax.xaxis.tick_top()
 
-        # Adiciona os números nas células
+        # Adiciona os números com cor de texto dinâmica (não mudou)
+        threshold = self.matriz.max() / 2.
+        
         for i in range(self.matriz.shape[0]):
             for j in range(self.matriz.shape[1]):
                 valor = int(self.matriz[i, j])
-                if valor > 0:
-                    ax.text(j, i, str(valor), ha='center', va='center', color='white')
+                cor_texto = 'white' if self.matriz[i, j] > threshold else 'black'
+                ax.text(j, i, str(valor), ha='center', va='center', color=cor_texto)
 
         ax.set_xlabel("Classe Real (Topo)")
         ax.set_ylabel("Classe Prevista")
         plt.tight_layout()
+        plt.savefig("../../Matriz de confusao")
         plt.show()
-        plt.savefig("fshdf")
             
             
                 

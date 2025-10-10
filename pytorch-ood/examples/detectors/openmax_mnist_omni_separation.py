@@ -125,7 +125,7 @@ def confusion_matrix(test_loader,targets_original,nome_classes_originais,UUC_cla
     predicts = torch.cat(predicts,dim=0).cpu().numpy()
     labels = torch.cat(labels,dim=0).cpu().numpy()
 
-    matriz_confusao = mc()
+    matriz_confusao = mc(predicts,labels,targets_original,UUC_classes,nome_classes_originais)
     matriz_confusao.computa_matriz()
     matriz_confusao.exibe_matriz()
 
@@ -142,7 +142,7 @@ def main():
     transforms.ToTensor()
     ])
     
-    bs = 20
+    bs = 128
 
     #conjunto de treino mnist sem as classes desconhecidas
     mnist_train = MNIST_OSR_TRAIN(root="data", train=True, download=True, transform=MNIST_trans,UUC_classes=UUC_classes)
@@ -187,7 +187,7 @@ def main():
     print(test_dataloader_targets)
     #definicao de parametros de treino
     lr=0.0003
-    epochs = 2
+    epochs = 500
     criterion = nn.CrossEntropyLoss()
 
     #parametros do openmax
@@ -218,8 +218,8 @@ def main():
 
         analiseGrafica.addEpoch(metricas,epoch,train_loss=train_loss,train_acc=train_acc,val_loss=val_loss,val_acc=val_acc)
 
-    nome_classes_originais = ["omniglot",1,2,3,4,5,6,7,8,9,10]
-    confusion_matrix()
+    nome_classes_originais = ["omniglot",0,1,2,3,4,5,6]
+    confusion_matrix(test_loader,targets_antigos,nome_classes_originais,UUC_classes,detector)
 
     analiseGrafica.mostraGrafico(tail=tailsize,alpha=alpha,epsilon=epsilon)
         
