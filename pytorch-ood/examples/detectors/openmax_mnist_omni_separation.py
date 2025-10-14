@@ -133,7 +133,7 @@ def confusion_matrix(test_loader,targets_original,nome_classes_originais,UUC_cla
 def main():
     UUC_classes = [7,8,9]
 
-    nomeDataset = f"Mnist (UUC:{UUC_classes}+ omniglot"
+    nomeDataset = f"Mnist (UUC{UUC_classes}+ omniglot)"
 
     analiseGrafica = AnaliseGrafica_OpenMax(nomeDataset)
     
@@ -168,7 +168,7 @@ def main():
     #ajuste de tamanho do dataset de outliers
     novo_dataset_out_test = random_dataset(dataset_out_test,novo_tamanho)
 
-    print(f"tamanho treino mnist {len(dataset_train)}\n tamanho teste mnist {len(dataset_mnist_test)}\n tamanho teste omniglot {len(novo_dataset_out_test)}")
+    print(f"tamanho validacao {len(dataset_val)}\ntamanho treino mnist {len(dataset_train)}\n tamanho teste mnist {len(dataset_mnist_test)}\n tamanho teste omniglot {len(novo_dataset_out_test)}")
 
     train_loader = DataLoader(dataset_train, batch_size=bs, shuffle=True)
 
@@ -184,17 +184,21 @@ def main():
         test_dataloader_targets.append(y)
 
     test_dataloader_targets = torch.cat(test_dataloader_targets) 
+
     print(test_dataloader_targets)
     #definicao de parametros de treino
-    lr=0.0003
-    epochs = 500
+    lr=0.0002
+    epochs = 300
     criterion = nn.CrossEntropyLoss()
 
     #parametros do openmax
     tailsize=20
-    alpha=4
+    alpha=1
     epsilon=0.5
 
+    
+            
+            
     #criacao do modelo de rede neural
     model = PlainCNN(num_classes=10-len(UUC_classes)).to(device)
     detector = OpenMax(model, tailsize=tailsize, alpha=alpha, euclid_weight=1,epsilon=epsilon)
@@ -210,15 +214,16 @@ def main():
         val_loss, val_acc = validation(val_loader,model,criterion)
 
         print(f"Epoch {epoch+1}/{epochs} | Loss: {train_loss:.4f} | Acc: {train_acc:.4f}| lr = {optimizer.param_groups[0]['lr']}") 
-           
-        detector.fit(train_loader, device=device)#ajuste do openmax
-        metricas = test(test_loader,detector)
-        scheduler.step()
-        print(metricas)
 
-        analiseGrafica.addEpoch(metricas,epoch,train_loss=train_loss,train_acc=train_acc,val_loss=val_loss,val_acc=val_acc)
+        if(epoch!=0 and (epoch%5==0 or epoch==epochs-1)):
+            detector.fit(train_loader, device=device)#ajuste do openmax
+            metricas = test(test_loader,detector)
+            #scheduler.step()
+            print(metricas)
 
-    nome_classes_originais = ["omniglot",0,1,2,3,4,5,6]
+            analiseGrafica.addEpoch(metricas,epoch,train_loss=train_loss,train_acc=train_acc,val_loss=val_loss,val_acc=val_acc)
+
+    nome_classes_originais = ["omniglot",0,1,2,3,4,5,6,7,8,9]
     confusion_matrix(test_loader,targets_antigos,nome_classes_originais,UUC_classes,detector)
 
     analiseGrafica.mostraGrafico(tail=tailsize,alpha=alpha,epsilon=epsilon)

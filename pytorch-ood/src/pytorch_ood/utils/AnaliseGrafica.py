@@ -76,7 +76,7 @@ class AnaliseGrafica:
         plt.legend()
         plt.grid(True, linestyle='--', alpha=0.6)
 
-        plt.savefig(f"../../../metricas_{self.nome}_{self.nome_dataset}.png")
+        plt.savefig(f"../../../resultados/metricas_{self.nome}_{self.nome_dataset}.png")
 
         if((self.train_loss and self.train_acc and self.val_acc and self.val_loss)):
             plt.figure(figsize=(12, 8))
