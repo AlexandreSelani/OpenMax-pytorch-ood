@@ -32,7 +32,9 @@ from pytorch_ood.detector import OpenMax
 from pytorch_ood.model import PlainCNN
 from pytorch_ood.utils import OODMetrics, ToUnknown, fix_random_seed, metricasImplementadas,AnaliseGrafica_OpenMax,Matriz_confusao_osr as mc
 from pytorch_ood.utils.aux_dataset import *
-
+import pandas as pd
+import json
+import gc
 seed=777
 fix_random_seed(seed)
 
@@ -106,7 +108,7 @@ def validation(val_loader,model,criterion):
 
     return val_loss/(batch_idx+1), correct/total
 
-def confusion_matrix(test_loader,targets_original,nome_classes_originais,UUC_classes,detector):
+def confusion_matrix(test_loader,targets_original,nome_classes_originais,UUC_classes,detector,alpha,tail,epsilon):
     predicts=[]
     labels=[]
 
@@ -127,15 +129,15 @@ def confusion_matrix(test_loader,targets_original,nome_classes_originais,UUC_cla
 
     matriz_confusao = mc(predicts,labels,targets_original,UUC_classes,nome_classes_originais)
     matriz_confusao.computa_matriz()
-    matriz_confusao.exibe_matriz()
+    matriz_confusao.exibe_matriz("/home/alexandreselani/Desktop/pytorch-ood/resultados/"+f"alpha {alpha}/"+f"tail {tail}/"+f"/epsilon {epsilon}/")
 
-    
+
 def main():
     UUC_classes = [7,8,9]
 
     nomeDataset = f"Mnist (UUC{UUC_classes}+ omniglot)"
 
-    analiseGrafica = AnaliseGrafica_OpenMax(nomeDataset)
+   
     
     MNIST_trans = transforms.Compose([
     transforms.Resize(28),
@@ -188,25 +190,31 @@ def main():
     print(test_dataloader_targets)
     #definicao de parametros de treino
     lr=0.0002
-    epochs = 2
+    epochs = 200
     criterion = nn.CrossEntropyLoss()
 
     #parametros do openmax
-    tailsize=820
-    alpha=5
+    min_tailsize=20
+    #min_alpha=1
     epsilon=0.5
 
+    max_tailsize=2220
+    alpha=5
+    #max_alpha=10-len(UUC_classes)
+
+    melhor_acc=[0,0,0,0] #tail,alpha,acc,epsilon
+    melhor_uuc_acc=[0,0,0,0] #tail,alpha,uuc_acc,epsilon
+    melhor_inner_metric=[0,0,0,0] #tail,alpha,inner_metric,epsilon
+    melhor_outer_metric=[0,0,0,0] #tail,alpha,outer_metric,epsilon
+    melhor_f1=[0,0,0,0] #tail,alpha,f1,epsilon
+    melhor_halfpoint=[0,0,0,0]#tail,alpha,halfpoint,epsilon
     
+    resultados_grid_search = pd.DataFrame(columns=["tail","accuracy","UUC Accuracy","inner metric","outer metric","F1 macro","halfpoint"])
             
-            
+    analiseGrafica = AnaliseGrafica_OpenMax(nomeDataset)        
     #criacao do modelo de rede neural
     model = PlainCNN(num_classes=10-len(UUC_classes)).to(device)
-    detector = OpenMax(model, tailsize=tailsize, alpha=alpha, euclid_weight=1,epsilon=epsilon)
-    
     optimizer = optim.SGD(model.parameters(), lr=lr, momentum=0.9, weight_decay=5e-4)
-    scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=30, gamma=0.5)
-
-    detector = OpenMax(model, tailsize=tailsize, alpha=alpha, euclid_weight=1,epsilon=epsilon)
 
     #loop treino/validacao/teste
     for epoch in range(epochs):
@@ -215,20 +223,53 @@ def main():
 
         print(f"Epoch {epoch+1}/{epochs} | Loss: {train_loss:.4f} | Acc: {train_acc:.4f}| lr = {optimizer.param_groups[0]['lr']}") 
 
-        if(epoch!=0 and (epoch%5==0 or epoch==epochs-1)):
-            detector.fit(train_loader, device=device)#ajuste do openmax
-            metricas = test(test_loader,detector)
-            #scheduler.step()
-            print(metricas)
 
-            analiseGrafica.addEpoch(metricas,epoch,train_loss=train_loss,train_acc=train_acc,val_loss=val_loss,val_acc=val_acc)
 
     nome_classes_originais = ["omniglot",0,1,2,3,4,5,6,7,8,9]
-    confusion_matrix(test_loader,targets_antigos,nome_classes_originais,UUC_classes,detector)
+    for tailsize in range(min_tailsize,max_tailsize+1,200):
+        
+        print(f"tail = {tailsize} e alpha = {alpha}")
+        model.eval()
+        detector = OpenMax(model, tailsize=tailsize, alpha=alpha, euclid_weight=1,epsilon=epsilon)
+        with torch.no_grad():
+            detector.fit(train_loader,device=device)#ajuste do openmax
+            metricas = test(test_loader,detector)
+        confusion_matrix(test_loader,targets_antigos,nome_classes_originais,UUC_classes,detector,alpha,tailsize,epsilon)
+        del detector
+        gc.collect()
+        torch.cuda.empty_cache()
 
-    analiseGrafica.mostraGrafico(tail=tailsize,alpha=alpha,epsilon=epsilon)
+#confusion_matrix(test_loader,targets_antigos,nome_classes_originais,UUC_classes,detector,alpha,tailsize)
+
+#analiseGrafica.mostraGrafico(tail=tailsize,alpha=alpha,epsilon=epsilon)
+
+        resultados_grid_search.loc[len(resultados_grid_search)] = [tailsize,metricas['accuracy'][0],metricas['UUC Accuracy'][0],metricas['inner metric'][0],metricas['outer metric'][0],metricas['F1 macro'],metricas['halfpoint'][0]]
+
+            
+    resultados_grid_search.to_csv("/home/alexandreselani/Desktop/pytorch-ood/resultados/"+f"resultados_grid_search{nomeDataset}.csv",index=False)
+            
+            
+    with(open("/home/alexandreselani/Desktop/pytorch-ood/resultados/"+f"resultados_grid_search{nomeDataset}.txt","w")) as f:
+        f.write(f"Resultados do Grid Search OpenMax para {nomeDataset}, com alpha = {alpha} e epsilon = {epsilon}\n\n")
+        f.write(resultados_grid_search.to_string())
+        f.write("\n")
+        f.write(f"Maior acuracia: {resultados_grid_search.loc[resultados_grid_search['accuracy'].idxmax()]['tail']}\n")
+        f.write(f"Maior F1: {resultados_grid_search.loc[resultados_grid_search['F1 macro'].idxmax()]['tail']}\n")
+        f.write(f"Maior inner metric: {resultados_grid_search.loc[resultados_grid_search['inner metric'].idxmax()]['tail']}\n")
+        f.write(f"Maior outer metric: {resultados_grid_search.loc[resultados_grid_search['outer metric'].idxmax()]['tail']}\n")
+        f.write(f"Maior halfpoint: {resultados_grid_search.loc[resultados_grid_search['halfpoint'].idxmax()]['tail']}\n")
+        f.write(f"Maior uuc accuracy: {resultados_grid_search.loc[resultados_grid_search['UUC Accuracy'].idxmax()]['tail']}\n")
+
         
 
+        
+
+    
+    
+   
+    
+    
+        
     
 if __name__ == '__main__':
     main()

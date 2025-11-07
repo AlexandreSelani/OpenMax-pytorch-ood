@@ -225,3 +225,4 @@ from .textures import Textures
 from .tinyimagenet import TinyImageNet
 from .tinyimages import TinyImages, TinyImages300k
 from .pixmix import FeatureVisDataset, FractalDataset
+from .PanicumDataset_pytorchOOD import PanicumDataset_pytorchOOD

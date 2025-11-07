@@ -51,4 +51,5 @@ from .centers import ClassCenters, RunningCenters
 from .gru import GRUClassifier
 from .wrn import WideResNet
 from .PlainCNN import PlainCNN
+from .PlainCNN_panicum import PlainCNN_panicum
 from .SimpleMNIST_CNN import SimpleMNIST_CNN

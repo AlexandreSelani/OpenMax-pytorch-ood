@@ -7,9 +7,9 @@ import os.path
 class Matriz_confusao_osr:
     def __init__(self,predict,target_test,target_original,UUC_classes,col_labels):
         self.predict = predict
-        self.target_test = target_test
-        self.target_original=target_original
-        self.UUC_classes = np.array(UUC_classes)
+        self.target_test = target_test+1#eh preciso somar um pois podem haver targets = -1 no caso de usar um dataset inteiro como deconhecido junto com certas classes desconhecidas (como mnist + omniglot com omniglot e classes 7,8,9 como desconhecidas)
+        self.target_original=target_original+1
+        self.UUC_classes = np.array(UUC_classes)+1
         self.col_labels = col_labels
         self.matriz=None
         self.mapa_de_linhas = self.mapear_classes()
@@ -26,13 +26,13 @@ class Matriz_confusao_osr:
         linha_idx = 1  # Começa em 1 para as conhecidas
 
         for c in np.unique(self.target_original):
-            c = c+1
             print(c)
-            if c not in self.UUC_classes:
+            if c not in self.UUC_classes and c!=0:
                 mapa_de_linhas[c] = linha_idx
                 linha_idx += 1
             else:
                 mapa_de_linhas[c] = 0
+        print(mapa_de_linhas)
         return mapa_de_linhas
 
     def computa_matriz(self):
@@ -46,7 +46,7 @@ class Matriz_confusao_osr:
         
         for predict, target_original in zip(self.predict,self.target_original):
             predict = int(predict)
-            target_original = int(target_original)+1
+            target_original = int(target_original)
             linha = self.mapa_de_linhas[predict]
             coluna = target_original
             self.matriz[linha][coluna]+=1
@@ -83,7 +83,7 @@ class Matriz_confusao_osr:
 
         # Eixo Y = previsão (linha 0 é "desconhecido")
         linhas_ordenadas = sorted(self.mapa_de_linhas.items(), key=lambda x: x[1])
-        row_labels = ['Desconhecido'] + [str(classes) for idx,classes in enumerate(self.col_labels) if (idx not in self.UUC_classes)]
+        row_labels = ['Desconhecido'] + [str(classes) for idx,classes in enumerate(self.col_labels) if (idx!=0 and idx not in self.UUC_classes)]
 
         ax.set_xticks(np.arange(len(self.col_labels)))
         ax.set_xticklabels(self.col_labels, rotation=45, ha="left")

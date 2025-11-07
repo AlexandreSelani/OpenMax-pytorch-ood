@@ -14,7 +14,7 @@ class metricasImplementadas:
     def _metricas(self):
         print(f"velho {self.label-1} novo {self.label}")
         return {"accuracy": self._accuracy(),
-                "inner_metric": self._inner_metric(),
+                "inner metric": self._inner_metric(),
                 "UUC Accuracy": self._UUC_Accuracy(),
                 "outer metric": self._outer_metric(),
                 "halfpoint": self._halfpoint(),

@@ -14,7 +14,7 @@ class AnaliseGrafica:
         self.uuc_accuracy=[]
         self.F1=[]
         self.epochs=[]
-
+        self.dir="/home/alexandreselani/Desktop/pytorch-ood/resultados/"
         self.train_loss=[]
         self.train_acc=[]
 
@@ -27,7 +27,7 @@ class AnaliseGrafica:
         self.epochs.append(epoch)
 
         self.test_accuracy.append(metricas["accuracy"][0])
-        self.inner_metric.append(metricas["inner_metric"][0])
+        self.inner_metric.append(metricas["inner metric"][0])
         self.outer_metric.append(metricas["outer metric"][0])
         self.halfpoint.append(metricas["halfpoint"][0])
         self.uuc_accuracy.append(metricas["UUC Accuracy"][0])
@@ -76,7 +76,7 @@ class AnaliseGrafica:
         plt.legend()
         plt.grid(True, linestyle='--', alpha=0.6)
 
-        plt.savefig(f"../../../resultados/metricas_{self.nome}_{self.nome_dataset}.png")
+        plt.savefig(self.dir + f"metricas_{self.nome}_{self.nome_dataset}.png")
 
         if((self.train_loss and self.train_acc and self.val_acc and self.val_loss)):
             plt.figure(figsize=(12, 8))
@@ -95,7 +95,7 @@ class AnaliseGrafica:
             plt.legend()
             plt.grid(True, linestyle='--', alpha=0.6)
 
-            plt.savefig(f"../../../curva_de_erro{self.nome}_{self.nome_dataset}.png")
+            plt.savefig(self.dir + f"curva_de_erro{self.nome}_{self.nome_dataset}.png")
 
 
         
