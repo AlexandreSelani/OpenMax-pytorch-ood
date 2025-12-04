@@ -4,7 +4,7 @@ import numpy as np
 import matplotlib.colors as mcolors
 import os.path
 
-class Matriz_confusao_osr:
+class Matriz_confusao_osr_dataset_outlier:
     def __init__(self,predict,target_test,target_original,UUC_classes,col_labels):
         self.predict = predict
         self.target_test = target_test+1#eh preciso somar um pois podem haver targets = -1 no caso de usar um dataset inteiro como deconhecido junto com certas classes desconhecidas (como mnist + omniglot com omniglot e classes 7,8,9 como desconhecidas)
@@ -36,13 +36,13 @@ class Matriz_confusao_osr:
         return mapa_de_linhas
 
     def computa_matriz(self):
-        print(self.mapa_de_linhas)
-
-        colunas = len(np.unique(self.target_original))
-        linhas = len(np.unique(self.target_test))
-
-        self.matriz=np.zeros((linhas,colunas)) # colunas: Omniglot, M0,M1,...,M9 -- targets reais
+        
+        if(self.matriz==None):
+            colunas = len(np.unique(self.target_original))
+            linhas = len(np.unique(self.target_test))
+            self.matriz=np.zeros((linhas,colunas)) # colunas: Omniglot, M0,M1,...,M9 -- targets reais
                                                 #linhas: Unknown, classes conhecidas (MNIST - UUC) -- predicoes
+        print(self.mapa_de_linhas)
         
         for predict, target_original in zip(self.predict,self.target_original):
             predict = int(predict)
@@ -110,9 +110,9 @@ class Matriz_confusao_osr:
         if dir:
             if not os.path.exists(dir):
                 os.makedirs(dir)
-            plt.savefig(dir+"Matriz de confusao")
+            plt.savefig(dir+"Matriz de confusao.png")
         else:
-            plt.savefig("../../Matriz de confusao")
+            plt.savefig("../../Matriz de confusao.png")
         plt.show()
             
             

@@ -1,7 +1,6 @@
 
 import matplotlib.pyplot as plt
-
-
+from . import metricasImplementadas
 class AnaliseGrafica:
 
     def __init__(self, nome:str,nome_dataset:str):
@@ -23,7 +22,7 @@ class AnaliseGrafica:
         
         self.titulo = f"metricas do {self.nome} "
 
-    def addEpoch(self,metricas,epoch:int,train_loss=None,train_acc=None,val_loss=None,val_acc=None):
+    def addEpoch(self,metricas:metricasImplementadas,epoch:int,train_loss=None,train_acc=None,val_loss=None,val_acc=None):
         self.epochs.append(epoch)
 
         self.test_accuracy.append(metricas["accuracy"][0])
@@ -99,6 +98,6 @@ class AnaliseGrafica:
 
 
         
-        plt.show()
+        #plt.show()
 
         

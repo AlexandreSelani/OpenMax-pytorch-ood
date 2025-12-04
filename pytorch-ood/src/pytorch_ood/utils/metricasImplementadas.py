@@ -12,7 +12,7 @@ class metricasImplementadas:
         self.label= self.label+1
         
     def _metricas(self):
-        print(f"velho {self.label-1} novo {self.label}")
+        #print(f"velho {self.label-1} novo {self.label}")
         return {"accuracy": self._accuracy(),
                 "inner metric": self._inner_metric(),
                 "UUC Accuracy": self._UUC_Accuracy(),
