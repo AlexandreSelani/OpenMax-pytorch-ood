@@ -281,6 +281,10 @@ def fix_random_seed(seed: int = 12345) -> None:
     torch.cuda.manual_seed_all(seed)
     random.seed(seed)
     np.random.seed(seed)
+    torch.backends.cudnn.deterministic = True 
+    
+    # Impede que o CuDNN procure o melhor algoritmo (introduz ruído)
+    torch.backends.cudnn.benchmark = False
 
 
 def extract_feature_avg(

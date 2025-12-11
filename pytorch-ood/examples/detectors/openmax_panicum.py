@@ -158,6 +158,7 @@ def confusion_matrix(test_loader,targets_original,nome_classes_originais,UUC_cla
     predicts = torch.cat(predicts,dim=0).cpu().numpy()
     labels = torch.cat(labels,dim=0).cpu().numpy()
 
+    
     matriz_confusao = mc(predicts,labels,targets_original,UUC_classes,nome_classes_originais)
     matriz_confusao.computa_matriz()
     matriz_confusao.exibe_matriz(dir=dir)

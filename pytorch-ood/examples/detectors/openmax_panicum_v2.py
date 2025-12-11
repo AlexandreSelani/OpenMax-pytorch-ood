@@ -31,7 +31,7 @@ import torch.optim as optim
 from pytorch_ood.dataset.img import PanicumDataset_pytorchOOD
 from pytorch_ood.detector import OpenMax
 from pytorch_ood.model import PlainCNN_panicum
-from pytorch_ood.utils import OODMetrics, ToUnknown, fix_random_seed, metricasImplementadas,AnaliseGrafica_OpenMax,Matriz_confusao_osr_dataset_outlier as mc
+from pytorch_ood.utils import OODMetrics, ToUnknown, fix_random_seed, metricasImplementadas,AnaliseGrafica_OpenMax,Matriz_confusao_osr_dataset_outlier_cumulativa as mc
 from pytorch_ood.utils.aux_dataset import *
 from sklearn.model_selection import StratifiedKFold,KFold,train_test_split
 import numpy as np
@@ -39,6 +39,7 @@ import matplotlib.pyplot as plt
 import os
 import pandas as pd
 import gc
+import copy
 seed = 42
 fix_random_seed(seed)
 
@@ -56,7 +57,7 @@ def test(test_loader,detector):
         #score eh a ativacao de todas as classes apos a openmax
         with torch.no_grad():
             score = detector(X.to(device))
-            
+            #print(score)
             max_values, predicted = torch.max(score, dim=1)
             predict = torch.where(max_values >= detector.epsilon, predicted, torch.zeros_like(predicted))
 
@@ -71,9 +72,9 @@ def test(test_loader,detector):
     metricas = metricasImplementadas(predict=predicts, label=labels)
 
     #print(ood_metrics.compute())
-    return metricas._metricas()
+    print(predicts,labels)
+    return metricas._metricas(),predicts,labels
     
-
 def train(train_loader,model,criterion,optimizer):
     model.train()
     train_loss = 0
@@ -94,8 +95,6 @@ def train(train_loader,model,criterion,optimizer):
         _, predicted = outputs.max(1)
         total += targets.size(0)
         correct += predicted.eq(targets).sum().item()
-
-    
     
     return train_loss/(batch_idx+1), correct/total
 
@@ -141,28 +140,32 @@ def validation(val_loader,model,criterion):
         correct += predicted.eq(targets).sum().item()
 
     return val_loss/(batch_idx+1), correct/total
+
+
+
 def main():
     nomeDataset = "panicum"
+    # Diretório de saída
+    output_dir = "/home/alexandreselani/Desktop/pytorch-ood/pytorch-ood/experimento_panicum/Resultados OpenMax/"
+    os.makedirs(output_dir, exist_ok=True)
+    #analiseGrafica = AnaliseGrafica_OpenMax(nomeDataset)
 
-    analiseGrafica = AnaliseGrafica_OpenMax(nomeDataset)
-
-    lr=0.001
-    epochs = 3
-    bs=4
+    lr=0.0001
+    epochs = 40
+    bs=16
 
     weights = ResNet50_Weights.DEFAULT
     
-    panicum_kkc = ImageFolder(root="/home/alexandreselani/Desktop/Dataset_panicum/Dataset/Treino/",transform=weights.transforms())
-    panicum_uuc = ImageFolder(root="/home/alexandreselani/Desktop/Dataset_panicum/Dataset/Teste/",transform=weights.transforms(),target_transform=ToUnknown())
+    panicum_kkc = ImageFolder(root="/home/alexandreselani/Desktop/Segmentacao/ImagensCortadas/Alexandre/Dataset/Todas/KKC/",transform=weights.transforms())
+    panicum_uuc = ImageFolder(root="/home/alexandreselani/Desktop/Segmentacao/ImagensCortadas/Alexandre/Dataset/Todas/UUC/",transform=weights.transforms(),target_transform=ToUnknown())
 
     modelos = []
-    fold_test_dataloaders = []
-    fold_train_dataloaders = []
+    fold_test_dataset = []
+    fold_train = []
 
     SKFold = StratifiedKFold(n_splits=5,random_state=42,shuffle=True)
 
     for i, (train_idx, test_idx) in enumerate(SKFold.split(X=panicum_kkc.samples, y=panicum_kkc.targets)):
-        torch.cuda.empty_cache()
         model = resnet50(weights=weights)
         num_features = model.fc.in_features
         model.fc = nn.Linear(num_features, 2)
@@ -172,7 +175,7 @@ def main():
         train_idx, val_idx = train_test_split(
             train_idx,
             test_size=0.1,
-            stratify=[panicum_kkc.targets[i] for i in train_idx],
+            stratify=[panicum_kkc.targets[v] for v in train_idx],
             random_state=42,
         )
 
@@ -215,137 +218,149 @@ def main():
         plt.xlabel('Épocas')
         plt.xticks(e)
         plt.ylabel('Valor')
+        plt.ylim(0,2)
         plt.title(f'Evolução de Loss e Acurácia - Fold {i}')
         plt.legend()
         plt.grid(True, linestyle='--', alpha=0.6)
         plt.tight_layout()
         
-
-        dir = f"/home/alexandreselani/Desktop/OpenMax-pytorch-ood/resultados/Curvas validacao/"
-        os.makedirs(dir, exist_ok=True)
-        plt.savefig(dir+f"Fold {i}.png")
+        #DESCOMENTAR PARA PLOTAR
         
-        modelos.append(model)
-        fold_test_dataloaders.append(test_dataloader)
-        fold_train_dataloaders.append(train_dataloader)
+        
+        plt.savefig(output_dir+f"Fold {i}.png")
+        
+        modelos.append(model.cpu().state_dict())
+        fold_test_dataset.append(copy.deepcopy(test_dataset))
+        fold_train.append(train_idx)
+        del model, optimizer, criterion, train_dataloader, val_dataloader, test_dataloader
+        torch.cuda.empty_cache()
+        gc.collect()
     
     
-    min_tailsize=0
-    max_tailsize=1001
-    alpha=1
-    epsilons = [0.3,0.35,0.4]
+    for i,(train_fold, test_fold) in enumerate(zip(fold_train,fold_test_dataset)):
+        print(f"Fold {i}")
+        print(f"Tamanho treino: {len(train_fold)}")
+        print(f"Tamanho teste: {len(test_fold)}")
+
+
+    # Configurações
+    min_tailsize = 0
+    max_tailsize = 200
+    step_tail = 10
+    alpha = 2
+    epsilons = [0.33, 0.35, 0.37, 0.4]
+
     
+
+    # Loop Principal: Epsilon (parâmetro externo)
     for epsilon in epsilons:
-
-        f1s = {}
-        f1s_std = {}
-
-        accs = {}
-        accs_std = {}
-
-        uuc_accs = {}
-        uuc_accs_std = {}
-
-        inners = {}
-        inners_std = {}
-
-        outers = {}
-        outers_std = {}
-
-        halfpoints = {}
-        halfpoints_std = {}
-
-        val_accs = {}
-        val_accs_std = {}
-
-        val_losses = {}
         
-        for tail in range(min_tailsize,max_tailsize+1,100):
+        # Dicionário para acumular resultados de TODOS os folds para cada tail
+        # Estrutura: { tail_size: { 'f1': [], 'acc': [], ... } }
+        results_by_tail = {}
+        
+        # Loop Otimizado 1: Iterar pelos MODELOS (Folds) primeiro!
+        # Carregamos o modelo UMA vez e testamos todos os tails nele.
+        matrizes_confusao = [None for _ in range(min_tailsize, max_tailsize+1, step_tail)]
+        #print(matrizes_confusao)
+        for m in range(len(modelos)):
+            print(f"Processando Fold {m+1}/{len(modelos)} para Epsilon {epsilon}...")
             
-            print(f"TAIL = {tail}")
-            all_f1 = []
-            all_acc=[]
-            all_uuc_acc=[]
-            all_inner=[]
-            all_outer=[]
-            all_halfpoint=[]
-            all_val_acc=[]
-            all_val_loss=[]
+            # 1. Carregar Modelo e Dados (Pesado - feito apenas 1x por fold)
+            torch.cuda.empty_cache()
+            gc.collect()
+            model = resnet50()
+            model.fc = nn.Linear(model.fc.in_features, 2)
+            model.load_state_dict(modelos[m]) # Certifique-se que 'modelos' tem state_dicts na CPU
+            model.to(device)
+            model.eval()
 
-            for m in range(len(modelos)):
-                all_targets = np.array([])
-                torch.cuda.empty_cache()
-                gc.collect()
+            # Reconstruir Dataloaders (Assumindo que você tem os índices ou datasets salvos)
+            # Se 'fold_test_dataset' for lista de Datasets:
+            test_loader = DataLoader(fold_test_dataset[m], batch_size=bs, shuffle=False)
+            train_loader = DataLoader(Subset(panicum_kkc, fold_train[m]), batch_size=bs, shuffle=False)
 
-                model = modelos[m]
+            all_targets = np.array([])
+
+            for (_, y) in test_loader:
+                for target in y:
+                    all_targets= np.append(all_targets,target.detach().cpu())
+
+            # Loop Otimizado 2: Variar o Tail no MESMO modelo carregado
+            for idx,tail in enumerate(range(min_tailsize, max_tailsize+1, step_tail)):
                 
-                test_dataloader = fold_test_dataloaders[m]
-                train_dataloader = fold_train_dataloaders[m]
+                # Inicializa estrutura se primeira vez vendo esse tail
+                if tail not in results_by_tail:
+                    results_by_tail[tail] = {'f1': [], 'acc': [], 'uuc_acc': [], 'inner': [], 'outer': [], 'half': []}
 
-                detector = OpenMax(model, tailsize=tail, alpha=alpha, euclid_weight=1,epsilon=epsilon)
-                detector.fit(train_dataloader, device=device)
-                metricas = test(test_dataloader,detector)
-
-                for (x, y) in test_dataloader:
-                    for target in y:
-                        all_targets= np.append(all_targets,target.detach().cpu())
-
+                # Fit e Teste
+                # Nota: O Fit ainda pode ser demorado, mas economizamos o load do modelo
+                detector = OpenMax(model, tailsize=tail, alpha=alpha, euclid_weight=1, epsilon=epsilon)
                 
+                # Ajuste (Fit) - Geralmente precisa passar os dados de treino para calcular os centros/weibulls
+                detector.fit(train_loader, device=device)
+                
+                # Teste
+                metricas,predicts,targets_test = test(test_loader, detector)
+                
+                matriz=None
+                if(matrizes_confusao[idx] is None):
+                    matriz = mc(predicts,targets_test,all_targets,[],["Panicum","Solo","Milho"])
+                    matriz.computa_matriz()
+                    matrizes_confusao[idx] = matriz
+                else:
+                    matriz = matrizes_confusao[idx]
+                    matriz.set_data(predicts,targets_test,all_targets)
+                    matriz.computa_matriz()
 
-                print(metricas)
-                all_f1.append(metricas["F1 macro"])
-                all_acc.append(metricas["accuracy"][0])
-                all_uuc_acc.append(metricas["UUC Accuracy"][0])
-                all_inner.append(metricas["inner metric"][0])
-                all_outer.append(metricas["outer metric"][0])
-                all_halfpoint.append(metricas["halfpoint"][0])
+                # Guardar métricas deste fold para este tail
+                results_by_tail[tail]['f1'].append(metricas["F1 macro"])
+                results_by_tail[tail]['acc'].append(metricas["accuracy"][0])
+                results_by_tail[tail]['uuc_acc'].append(metricas["UUC Accuracy"][0])
+                results_by_tail[tail]['inner'].append(metricas["inner metric"][0])
+                results_by_tail[tail]['outer'].append(metricas["outer metric"][0])
+                results_by_tail[tail]['half'].append(metricas["halfpoint"][0])
 
+            # Limpeza pós-fold
+            del model, detector
+            torch.cuda.empty_cache()
 
-            f1s[tail]        = np.array(all_f1).mean()
-            f1s_std[tail]    = np.array(all_f1).std()
-
-            accs[tail]       = np.array(all_acc).mean()
-            accs_std[tail]   = np.array(all_acc).std()
-
-            inners[tail]     = np.array(all_inner).mean()
-            inners_std[tail] = np.array(all_inner).std()
-
-            outers[tail]     = np.array(all_outer).mean()
-            outers_std[tail] = np.array(all_outer).std()
-
-            uuc_accs[tail]       = np.array(all_uuc_acc).mean()
-            uuc_accs_std[tail]   = np.array(all_uuc_acc).std()
-
-            halfpoints[tail]        = np.array(all_halfpoint).mean()
-            halfpoints_std[tail]    = np.array(all_halfpoint).std()
+        
+        # --- AGREGAÇÃO E ESCRITA DO CSV (Após rodar todos os folds) ---
+        final_data = []
+        
+        # Ordenar por tail para o CSV ficar bonito
+        for tail in sorted(results_by_tail.keys()):
+            metrics = results_by_tail[tail]
             
-        
-        df = pd.DataFrame({
-        "tail": list(f1s.keys()),
-        
-        "f1_macro_medio": list(f1s.values()),
-        #"f1_macro_std": list(f1s_std.values()),
-        
-        "acc_medio": list(accs.values()),
-        #"acc_std": list(accs_std.values()),
-        
-        "uuc_acc_medio": list(uuc_accs.values()),
-        #"uuc_acc_std": list(uuc_accs_std.values()),
-        
-        "inner_medio": list(inners.values()),
-        #"inner_std": list(inners_std.values()),
-        
-        "outer_medio": list(outers.values()),
-        #"outer_std": list(outers_std.values()),
-        
-        "halfpoint_medio": list(halfpoints.values()),
-        #"halfpoint_std": list(halfpoints_std.values())
-    })
+            row = {
+                "tail": tail,
+                "f1_macro_medio": np.mean(metrics['f1']),
+                "f1_macro_std": np.std(metrics['f1']), # É bom ter o desvio padrão
+                "acc_medio": np.mean(metrics['acc']),
+                "uuc_acc_medio": np.mean(metrics['uuc_acc']),
+                "inner_medio": np.mean(metrics['inner']),
+                "outer_medio": np.mean(metrics['outer']),
+                "halfpoint_medio": np.mean(metrics['half'])
+            }
+            final_data.append(row)
 
+        df = pd.DataFrame(final_data)
+        
+        # Nome dinâmico correto
+        pasta = f"alpha_{alpha}/epsilon_{epsilon}/"
+        filename_csv = f"Resultados_grid_panicum_tail_{min_tailsize}_{max_tailsize}_eps_{epsilon}_alpha_{alpha}.csv"
+        organized_dir = os.path.join(output_dir, pasta)
 
-        dir = f"/home/alexandreselani/Desktop/pytorch-ood/pytorch-ood/experimento_panicum/Resultados OpenMax/"
-        os.makedirs(dir, exist_ok=True)
-        df.to_csv(f"/home/alexandreselani/Desktop/pytorch-ood/pytorch-ood/experimento_panicum/Resultados OpenMax/Resultados_grid_search_panicum_tail_0_1000_epsilon_{epsilon}_alpha_{alpha}.csv", index=False)
+        os.makedirs(organized_dir, exist_ok=True)
+
+        csv_path = os.path.join(organized_dir,filename_csv)
+        
+        for idx,m in enumerate(matrizes_confusao):
+            m.exibe_matriz(dir=organized_dir,name=f"tail_{idx*step_tail}")
+
+        df.to_csv(csv_path, index=False)
+        print(f"Arquivo salvo: {csv_path}")
 
 
     
