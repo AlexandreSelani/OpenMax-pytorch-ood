@@ -151,7 +151,7 @@ def main():
     #analiseGrafica = AnaliseGrafica_OpenMax(nomeDataset)
 
     lr=0.0001
-    epochs = 2
+    epochs = 70
     bs=32
 
     transform = transforms.Compose([
@@ -242,11 +242,11 @@ def main():
 
     # grid search
     min_tailsize = 0
-    max_tailsize = 1
+    max_tailsize = 600
     step_tail = 100
     min_alpha = 1
-    max_alpha = 2
-    epsilons = [0]#[0.2,0.3,0.5,0.7,0.9]
+    max_alpha = 10
+    epsilons = [0.2,0.3,0.5,0.7,0.9]
 
     melhores_hiperparametros = {'alpha':None,
                                 'epsilon':None,
