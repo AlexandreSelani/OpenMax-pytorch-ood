@@ -151,7 +151,7 @@ def main():
     #analiseGrafica = AnaliseGrafica_OpenMax(nomeDataset)
 
     lr=0.0001
-    epochs = 70
+    epochs = 2
     bs=32
 
     transform = transforms.Compose([
@@ -164,8 +164,10 @@ def main():
 
     mnist_train = MNIST(root="./data/",download=True,transform=transform,train=True)
     mnist_test = MNIST(root="./data/",download=True,transform=transform,train=False)
-    omniglot = Omniglot(root="./data/",download=True,transform=transform,target_transform=ToUnknown())
-
+    test_omniglot = Omniglot(root="./data/",download=True,transform=transform,target_transform=ToUnknown())
+    test_omniglot_reduzido = random_dataset(test_omniglot,10000)
+    val_omniglot = Omniglot(root="./data/",download=True,transform=transform,target_transform=ToUnknown(),background=False)
+    
     
     model = alexnet()
     model.classifier[6] = nn.Linear(
@@ -174,19 +176,29 @@ def main():
     )
     model = model.to(device)
 
-    train_dataset,val_dataset = validation_split(0.1,mnist_train)
-    test_dataset = ConcatDataset([omniglot,mnist_test])
+    
+
+    train_dataset,mnist_val_dataset = validation_split(0.1,mnist_train)
+    val_omniglot_reduzido = random_dataset(val_omniglot,len(mnist_val_dataset))
+
+    grid_search_val_dataset = ConcatDataset([mnist_val_dataset,val_omniglot_reduzido])
+    test_dataset = ConcatDataset([test_omniglot_reduzido,mnist_test])
+    
+    print(f"Tamanho treino mnist: {len(train_dataset)}")
+    print(f"Tamanho teste mnist: {len(mnist_test)}")
+    print(f"Tamanho teste omniglot: {len(test_omniglot_reduzido)}")
+    print(f"Tamanho validacao omniglot: {len(val_omniglot_reduzido)}")
+    print(f"Tamanho validacao mnist: {len(mnist_val_dataset)}")
+
         
 
     train_dataloader = DataLoader(train_dataset,batch_size=bs,shuffle=True,num_workers=4)
-    val_dataloader = DataLoader(val_dataset,batch_size=bs,shuffle=True,num_workers=4)
+    val_mnist_dataloader = DataLoader(mnist_val_dataset,batch_size=bs,shuffle=True,num_workers=4)
+    grid_search_val_dataloader = DataLoader(grid_search_val_dataset,batch_size=bs,shuffle=False,num_workers=4)
     test_dataloader = DataLoader(test_dataset,batch_size=bs,shuffle=False,num_workers=4)
 
-    print(f"Tamanho Validacao: {len(val_dataset)}")
-    print(f"Tamanho treino: {len(train_dataset)}")
-    print(f"Tamanho teste mnist: {len(mnist_test)}")
-    print(f"Tamanho teste omniglot: {len(omniglot)}")
     
+
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.SGD(model.parameters(), lr=lr, momentum=0.9, weight_decay=5e-4)
 
@@ -196,7 +208,7 @@ def main():
     for epoch in range(epochs):
     
         train_loss, train_acc = train(train_dataloader, model, criterion, optimizer)
-        val_loss, val_acc = validation(val_dataloader,model,criterion)
+        val_loss, val_acc = validation(val_mnist_dataloader,model,criterion)
         t_loss.append(train_loss)
         t_acc.append(train_acc)
         v_loss.append(val_loss)
@@ -228,19 +240,22 @@ def main():
     
 
 
-    # Configurações
+    # grid search
     min_tailsize = 0
-    max_tailsize = 600
+    max_tailsize = 1
     step_tail = 100
     min_alpha = 1
-    max_alpha = 10
-    epsilons = [0.2,0.3,0.5,0.7,0.9]
+    max_alpha = 2
+    epsilons = [0]#[0.2,0.3,0.5,0.7,0.9]
+
+    melhores_hiperparametros = {'alpha':None,
+                                'epsilon':None,
+                                'tail':None}
+    melhor_f1=-1
 
     for alpha in range(min_alpha,max_alpha+1):
 
         for epsilon in epsilons:
-            
-            results_by_tail = {}
             
             matrizes_confusao = [None for _ in range(min_tailsize, max_tailsize+1, step_tail)]
             #print(matrizes_confusao)
@@ -250,9 +265,11 @@ def main():
             
             model.eval()
 
+            results_by_tail = {}
+            
             all_targets = np.array([])
 
-            for (_, y) in test_dataloader:
+            for (_, y) in grid_search_val_dataloader:
                 for target in y:
                     all_targets= np.append(all_targets,target.detach().cpu())
 
@@ -266,12 +283,18 @@ def main():
                 # Ajuste (Fit) - Geralmente precisa passar os dados de treino para calcular os centros/weibulls
                 detector.fit(train_dataloader, device=device)
                 
-                metricas,predicts,targets_test = test(test_dataloader, detector)
+                metricas,predicts,targets_test = test(grid_search_val_dataloader, detector)
                 
                 matriz = mc(predicts,targets_test,all_targets,[],["Omniglot",0,1,2,3,4,5,6,7,8,9])
                 matriz.computa_matriz()
                 matrizes_confusao[idx] = matriz
-            
+
+                if metricas["F1 macro"] > melhor_f1:
+                    melhores_hiperparametros["alpha"] = alpha
+                    melhores_hiperparametros["epsilon"] = epsilon
+                    melhores_hiperparametros["tail"] = tail
+                    melhor_f1 = metricas["F1 macro"]
+
                 # Guardar métricas deste fold para este tail
                 results_by_tail[tail] = {
                 "tail": tail,
@@ -312,8 +335,54 @@ def main():
             df.to_csv(csv_path, index=False)
             print(f"Arquivo salvo: {csv_path}")
 
+    
+    #RESULTADOS DO TESTE COM O MODELO SELECIONADO
+    detector = OpenMax(model, tailsize=melhores_hiperparametros["tail"],
+                              alpha=melhores_hiperparametros["alpha"], euclid_weight=1, 
+                              epsilon=melhores_hiperparametros["epsilon"])       
+    # Ajuste (Fit) - Geralmente precisa passar os dados de treino para calcular os centros/weibulls
+    detector.fit(train_dataloader, device=device)
+    
+    metricas,predicts,targets_test = test(test_dataloader, detector)
+
+    results_by_tail = {}
+            
+    all_targets = np.array([])
+
+    for (_, y) in test_dataloader:
+        for target in y:
+            all_targets= np.append(all_targets,target.detach().cpu())
+    
+    results_by_tail[tail] = {
+                "tail": tail,
+                "f1_macro": metricas["F1 macro"],
+                "accuracy": metricas["accuracy"][0],
+                "uuc_accuracy": metricas["UUC Accuracy"][0],
+                "inner_metric": metricas["inner metric"][0],
+                "outer_metric": metricas["outer metric"][0],
+                "halfpoint": metricas["halfpoint"][0]
+                }
+    
+    final_data = []
+
+    for tail in sorted(results_by_tail.keys()):
+        metrics = results_by_tail[tail]
+        final_data.append(metrics)
+
+    df = pd.DataFrame(final_data)
+
+    matriz = mc(predicts,targets_test,all_targets,[],["Omniglot",0,1,2,3,4,5,6,7,8,9])
+    matriz.computa_matriz()
 
     
+    filename_csv = f"melhor_modelo_teste_{min_tailsize}_{max_tailsize}_eps_{epsilon}_alpha_{alpha}.csv"
+    organized_dir = os.path.join(output_dir, filename_csv)
+    
+    matriz.exibe_matriz(dir=output_dir,name=f"melhor_modelo.png")
+
+    df.to_csv(organized_dir, index=False)
+    print(f"Arquivo salvo: melhor resultado")
+
 if __name__ == '__main__':
     main()
 

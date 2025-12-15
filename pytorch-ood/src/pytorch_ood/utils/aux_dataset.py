@@ -18,7 +18,7 @@ def random_dataset(dataset: VisionDataset, novo_tamanho: int):
     subset = Subset(dataset,indices)
     return subset
 
-def validation_split(porcentagem:float, dataset:VisionDataset, seed:int = 0):
+def validation_split(porcentagem:float, dataset:VisionDataset):
     assert porcentagem > 0
     """Funcao que divide um conjunto de treino em dois subconjuntos disjuntos: de treino (novo) e de validacao
     
