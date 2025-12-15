@@ -242,7 +242,7 @@ def main():
 
     # grid search
     min_tailsize = 0
-    max_tailsize = 600
+    max_tailsize = 800
     step_tail = 100
     min_alpha = 1
     max_alpha = 10
@@ -375,14 +375,14 @@ def main():
     matriz.computa_matriz()
 
     
-    filename_csv = f"melhor_modelo_teste_{min_tailsize}_{max_tailsize}_eps_{epsilon}_alpha_{alpha}.csv"
+    filename_csv = f"melhor_modelo_teste_{min_tailsize}_{max_tailsize}_eps_{melhores_hiperparametros['epsilon']}_alpha_{melhores_hiperparametros['alpha']}.csv"
     organized_dir = os.path.join(output_dir, filename_csv)
     
     matriz.exibe_matriz(dir=output_dir,name=f"melhor_modelo.png")
 
     df.to_csv(organized_dir, index=False)
     print(f"Arquivo salvo: melhor resultado")
-
+    print(f"Melhores hiperparametros \n {melhores_hiperparametros}")
 if __name__ == '__main__':
     main()
 
