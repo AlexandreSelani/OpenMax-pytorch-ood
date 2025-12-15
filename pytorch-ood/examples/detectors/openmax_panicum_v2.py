@@ -245,38 +245,31 @@ def main():
 
     # Configurações
     min_tailsize = 0
-    max_tailsize = 200
+    max_tailsize = 60
     step_tail = 10
-    alpha = 2
+    alpha = 1
     epsilons = [0.33, 0.35, 0.37, 0.4]
 
     
-
-    # Loop Principal: Epsilon (parâmetro externo)
     for epsilon in epsilons:
         
-        # Dicionário para acumular resultados de TODOS os folds para cada tail
-        # Estrutura: { tail_size: { 'f1': [], 'acc': [], ... } }
         results_by_tail = {}
         
-        # Loop Otimizado 1: Iterar pelos MODELOS (Folds) primeiro!
-        # Carregamos o modelo UMA vez e testamos todos os tails nele.
         matrizes_confusao = [None for _ in range(min_tailsize, max_tailsize+1, step_tail)]
         #print(matrizes_confusao)
         for m in range(len(modelos)):
             print(f"Processando Fold {m+1}/{len(modelos)} para Epsilon {epsilon}...")
             
-            # 1. Carregar Modelo e Dados (Pesado - feito apenas 1x por fold)
+            
             torch.cuda.empty_cache()
             gc.collect()
             model = resnet50()
             model.fc = nn.Linear(model.fc.in_features, 2)
-            model.load_state_dict(modelos[m]) # Certifique-se que 'modelos' tem state_dicts na CPU
+            model.load_state_dict(modelos[m]) 
             model.to(device)
             model.eval()
 
-            # Reconstruir Dataloaders (Assumindo que você tem os índices ou datasets salvos)
-            # Se 'fold_test_dataset' for lista de Datasets:
+            
             test_loader = DataLoader(fold_test_dataset[m], batch_size=bs, shuffle=False)
             train_loader = DataLoader(Subset(panicum_kkc, fold_train[m]), batch_size=bs, shuffle=False)
 
@@ -286,10 +279,10 @@ def main():
                 for target in y:
                     all_targets= np.append(all_targets,target.detach().cpu())
 
-            # Loop Otimizado 2: Variar o Tail no MESMO modelo carregado
+           
             for idx,tail in enumerate(range(min_tailsize, max_tailsize+1, step_tail)):
                 
-                # Inicializa estrutura se primeira vez vendo esse tail
+                
                 if tail not in results_by_tail:
                     results_by_tail[tail] = {'f1': [], 'acc': [], 'uuc_acc': [], 'inner': [], 'outer': [], 'half': []}
 
@@ -300,7 +293,6 @@ def main():
                 # Ajuste (Fit) - Geralmente precisa passar os dados de treino para calcular os centros/weibulls
                 detector.fit(train_loader, device=device)
                 
-                # Teste
                 metricas,predicts,targets_test = test(test_loader, detector)
                 
                 matriz=None
@@ -321,12 +313,11 @@ def main():
                 results_by_tail[tail]['outer'].append(metricas["outer metric"][0])
                 results_by_tail[tail]['half'].append(metricas["halfpoint"][0])
 
-            # Limpeza pós-fold
             del model, detector
             torch.cuda.empty_cache()
 
         
-        # --- AGREGAÇÃO E ESCRITA DO CSV (Após rodar todos os folds) ---
+        
         final_data = []
         
         # Ordenar por tail para o CSV ficar bonito
@@ -338,10 +329,15 @@ def main():
                 "f1_macro_medio": np.mean(metrics['f1']),
                 "f1_macro_std": np.std(metrics['f1']), # É bom ter o desvio padrão
                 "acc_medio": np.mean(metrics['acc']),
+                "acc_std": np.std(metrics['acc']),
                 "uuc_acc_medio": np.mean(metrics['uuc_acc']),
+                "uuc_acc_std": np.std(metrics['uuc_acc']),
                 "inner_medio": np.mean(metrics['inner']),
+                "inner_std": np.std(metrics['inner']),
                 "outer_medio": np.mean(metrics['outer']),
-                "halfpoint_medio": np.mean(metrics['half'])
+                "outer_std": np.std(metrics['outer']),
+                "halfpoint_medio": np.mean(metrics['half']),
+                "halfpoint_std": np.std(metrics['half'])
             }
             final_data.append(row)
 

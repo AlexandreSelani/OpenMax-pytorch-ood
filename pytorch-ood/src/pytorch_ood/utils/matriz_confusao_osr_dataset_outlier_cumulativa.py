@@ -120,7 +120,8 @@ class Matriz_confusao_osr_dataset_outlier_cumulativa:
             plt.savefig(dir+f"Matriz de confusao_{name}.png")
         else:
             plt.savefig(f"../../Matriz de confusao_{name}.png")
-       
+
+        plt.close()
 
     
             

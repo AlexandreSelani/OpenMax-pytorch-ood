@@ -10,7 +10,7 @@
 
 # when executing examples creates a data folder
 data/
-
+/home/alexandreselani/Desktop/pytorch-ood/pytorch-ood/examples/detectors/data
 # User-specific stuff
 .idea/**/workspace.xml
 .idea/**/tasks.xml
