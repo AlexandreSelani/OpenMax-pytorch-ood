@@ -21,28 +21,84 @@ TODO:
     LOOP DE TREINAMENTO E TESTES: feito
     ANALISE GRAFICA? feito
 """
-from torch.utils.data import DataLoader
-from torchvision.datasets import MNIST,Omniglot
+from torch.utils.data import DataLoader,ConcatDataset
+from torchvision.datasets import MNIST,Omniglot,ImageFolder
 import torch
 import torchvision.transforms as transforms
+from torchvision.models import alexnet
 import torch.nn as nn
 import torch.optim as optim
-from pytorch_ood.dataset.img import MNIST_OSR_TRAIN
+from pytorch_ood.dataset.img import PanicumDataset_pytorchOOD
 from pytorch_ood.detector import OpenMax
-from pytorch_ood.model import PlainCNN
-from pytorch_ood.utils import OODMetrics, ToUnknown, fix_random_seed, metricasImplementadas,AnaliseGrafica_OpenMax,Matriz_confusao_osr as mc
+from pytorch_ood.model import PlainCNN_panicum
+from pytorch_ood.utils import OODMetrics, ToUnknown, fix_random_seed, metricasImplementadas,AnaliseGrafica_OpenMax,Matriz_confusao_osr_dataset_outlier_cumulativa as mc
 from pytorch_ood.utils.aux_dataset import *
+from sklearn.model_selection import StratifiedKFold,KFold,train_test_split
+import numpy as np
+import matplotlib.pyplot as plt
+import os
 import pandas as pd
-import json
 import gc
-seed=777
+import copy
+seed = 42
 fix_random_seed(seed)
 
 device = "cuda:0"
 
 ood_metrics = OODMetrics()
 
+
 def test(test_loader,detector):
+    predicts=[]
+    labels=[]
+
+    for X, y in test_loader:
+        
+        #score eh a ativacao de todas as classes apos a openmax
+        with torch.no_grad():
+            score = detector(X.to(device))
+            #print(score)
+            max_values, predicted = torch.max(score, dim=1)
+            predict = torch.where(max_values >= detector.epsilon, predicted, torch.zeros_like(predicted))
+
+        
+        predicts.append(predict.detach().cpu())
+        labels.append(y.detach().cpu())
+        
+    
+    predicts = torch.cat(predicts,dim=0).cpu().numpy()
+    labels = torch.cat(labels,dim=0).cpu().numpy()
+    #ood_metrics.update(score[:,0],y)
+    metricas = metricasImplementadas(predict=predicts, label=labels)
+
+    #print(ood_metrics.compute())
+    print(predicts,labels)
+    return metricas._metricas(),predicts,labels
+    
+def train(train_loader,model,criterion,optimizer):
+    model.train()
+    train_loss = 0
+    correct = 0
+    total = 0
+    for batch_idx, (inputs, targets) in enumerate(train_loader):
+        
+        inputs, targets = inputs.to(device), targets.to(device)
+        optimizer.zero_grad()
+        outputs = model(inputs)
+        
+        loss = criterion(outputs, targets)
+        
+        loss.backward()
+        optimizer.step()
+
+        train_loss += loss.item()
+        _, predicted = outputs.max(1)
+        total += targets.size(0)
+        correct += predicted.eq(targets).sum().item()
+    
+    return train_loss/(batch_idx+1), correct/total
+
+def confusion_matrix(test_loader,targets_original,nome_classes_originais,UUC_classes,detector):
     predicts=[]
     labels=[]
 
@@ -61,32 +117,9 @@ def test(test_loader,detector):
     predicts = torch.cat(predicts,dim=0).cpu().numpy()
     labels = torch.cat(labels,dim=0).cpu().numpy()
 
-    #ood_metrics.update(score[:,0],y)
-    metricas = metricasImplementadas(predict=predicts, label=labels)
-
-    #print(ood_metrics.compute())
-    return metricas._metricas()  
-    
-
-def train(train_loader,model,criterion,optimizer):
-    model.train()
-    train_loss = 0
-    correct = 0
-    total = 0
-    for batch_idx, (inputs, targets) in enumerate(train_loader):
-        inputs, targets = inputs.to(device), targets.to(device)
-        optimizer.zero_grad()
-        outputs = model(inputs)
-        loss = criterion(outputs, targets)
-        loss.backward()
-        optimizer.step()
-
-        train_loss += loss.item()
-        _, predicted = outputs.max(1)
-        total += targets.size(0)
-        correct += predicted.eq(targets).sum().item()
-   
-    return train_loss/(batch_idx+1), correct/total
+    matriz_confusao = mc(predicts,labels,targets_original,UUC_classes,nome_classes_originais)
+    matriz_confusao.computa_matriz()
+    matriz_confusao.exibe_matriz()
 
 def validation(val_loader,model,criterion):
     model.eval()
@@ -108,169 +141,181 @@ def validation(val_loader,model,criterion):
 
     return val_loss/(batch_idx+1), correct/total
 
-def confusion_matrix(test_loader,targets_original,nome_classes_originais,UUC_classes,detector,alpha,tail,epsilon):
-    predicts=[]
-    labels=[]
-
-    for X, y in test_loader:
-        #score eh a ativacao de todas as classes apos a openmax
-        with torch.no_grad():
-            score = detector(X.to(device))
-            
-            max_values, predicted = torch.max(score, dim=1)
-            predict = torch.where(max_values >= detector.epsilon, predicted, torch.zeros_like(predicted))
-
-        predicts.append(predict.detach().cpu())
-        labels.append(y.detach().cpu())
-        
-    
-    predicts = torch.cat(predicts,dim=0).cpu().numpy()
-    labels = torch.cat(labels,dim=0).cpu().numpy()
-
-    matriz_confusao = mc(predicts,labels,targets_original,UUC_classes,nome_classes_originais)
-    matriz_confusao.computa_matriz()
-    matriz_confusao.exibe_matriz("/home/alexandreselani/Desktop/pytorch-ood/resultados/"+f"alpha {alpha}/"+f"tail {tail}/"+f"/epsilon {epsilon}/")
 
 
 def main():
-    UUC_classes = [7,8,9]
+    nomeDataset = "mnist_omniglot"
+    # Diretório de saída
+    output_dir = "/home/alexandreselani/Desktop/pytorch-ood/pytorch-ood/experimento_mnist_omniglot/Resultados OpenMax/"
+    os.makedirs(output_dir, exist_ok=True)
+    #analiseGrafica = AnaliseGrafica_OpenMax(nomeDataset)
 
-    nomeDataset = f"Mnist (UUC{UUC_classes}+ omniglot)"
+    lr=0.0001
+    epochs = 70
+    bs=32
 
-   
-    
-    MNIST_trans = transforms.Compose([
-    transforms.Resize(28),
-    transforms.ToTensor()
+    transform = transforms.Compose([
+    transforms.Grayscale(num_output_channels=3),
+    transforms.Resize(64),   # MUITO melhor que 224
+    transforms.ToTensor(),
+    transforms.Normalize(mean=[0.485, 0.456, 0.406],
+                         std=[0.229, 0.224, 0.225]),
     ])
+
+    mnist_train = MNIST(root="./data/",download=True,transform=transform,train=True)
+    mnist_test = MNIST(root="./data/",download=True,transform=transform,train=False)
+    omniglot = Omniglot(root="./data/",download=True,transform=transform,target_transform=ToUnknown())
+
     
-    bs = 128
+    model = alexnet()
+    model.classifier[6] = nn.Linear(
+        in_features=4096,
+        out_features=10
+    )
+    model = model.to(device)
 
-    #conjunto de treino mnist sem as classes desconhecidas
-    mnist_train = MNIST_OSR_TRAIN(root="data", train=True, download=True, transform=MNIST_trans,UUC_classes=UUC_classes)
+    train_dataset,val_dataset = validation_split(0.1,mnist_train)
+    test_dataset = ConcatDataset([omniglot,mnist_test])
+        
 
-    #conjuntos de treino e de validacao apos split
-    dataset_train,dataset_val = validation_split(0.05,mnist_train,seed)
+    train_dataloader = DataLoader(train_dataset,batch_size=bs,shuffle=True,num_workers=4)
+    val_dataloader = DataLoader(val_dataset,batch_size=bs,shuffle=True,num_workers=4)
+    test_dataloader = DataLoader(test_dataset,batch_size=bs,shuffle=False,num_workers=4)
 
-    #conjunto de teste mnist (target de classes desconhecidas = -1)
-    dataset_mnist_test = MNIST_OSR_TRAIN(root="data", train=False, download=True, transform=MNIST_trans,UUC_classes=UUC_classes)
-
-    #targets originais do conjunto de teste para matriz de confusao
-    targets_antigos = dataset_mnist_test.get_targets_antigos()  
-
-    dataset_out_test = Omniglot(
-         root="data", download=True,background=False, transform=MNIST_trans, target_transform=ToUnknown()
-     )
+    print(f"Tamanho Validacao: {len(val_dataset)}")
+    print(f"Tamanho treino: {len(train_dataset)}")
+    print(f"Tamanho teste mnist: {len(mnist_test)}")
+    print(f"Tamanho teste omniglot: {len(omniglot)}")
     
-    targets_omniglot = torch.tensor([t for _, t in dataset_out_test])
-    targets_antigos = torch.cat((targets_antigos, targets_omniglot))
-
-    print(targets_antigos)
-    novo_tamanho=10000
-    #ajuste de tamanho do dataset de outliers
-    novo_dataset_out_test = random_dataset(dataset_out_test,novo_tamanho)
-
-    print(f"tamanho validacao {len(dataset_val)}\ntamanho treino mnist {len(dataset_train)}\n tamanho teste mnist {len(dataset_mnist_test)}\n tamanho teste omniglot {len(novo_dataset_out_test)}")
-
-    train_loader = DataLoader(dataset_train, batch_size=bs, shuffle=True)
-
-    val_loader = DataLoader(dataset_val, batch_size=bs, shuffle=False)
-
-    #IMPORTANTE PARA A MATRIZ DE CONFUSAO: SHUFFLE DEVE SER FALSE PARA QUE NAO HAJA DIFERENCA NA ORDEM DAS LABELS ORIGINAIS E DAS LABELS APOS A DEFINICAO DAS CLASSES DESCONHECIDAS
-    test_loader = DataLoader(dataset_mnist_test+novo_dataset_out_test, batch_size=bs,shuffle=False)
-
-    #obtencao dos targets do conjunto de testes apos definicao das classes desconhecidas
-    test_dataloader_targets=[]
-
-    for i,(_,y) in enumerate(test_loader):
-        test_dataloader_targets.append(y)
-
-    test_dataloader_targets = torch.cat(test_dataloader_targets) 
-
-    print(test_dataloader_targets)
-    #definicao de parametros de treino
-    lr=0.0002
-    epochs = 200
     criterion = nn.CrossEntropyLoss()
-
-    #parametros do openmax
-    min_tailsize=20
-    #min_alpha=1
-    epsilon=0.5
-
-    max_tailsize=2220
-    alpha=5
-    #max_alpha=10-len(UUC_classes)
-
-    melhor_acc=[0,0,0,0] #tail,alpha,acc,epsilon
-    melhor_uuc_acc=[0,0,0,0] #tail,alpha,uuc_acc,epsilon
-    melhor_inner_metric=[0,0,0,0] #tail,alpha,inner_metric,epsilon
-    melhor_outer_metric=[0,0,0,0] #tail,alpha,outer_metric,epsilon
-    melhor_f1=[0,0,0,0] #tail,alpha,f1,epsilon
-    melhor_halfpoint=[0,0,0,0]#tail,alpha,halfpoint,epsilon
-    
-    resultados_grid_search = pd.DataFrame(columns=["tail","accuracy","UUC Accuracy","inner metric","outer metric","F1 macro","halfpoint"])
-            
-    analiseGrafica = AnaliseGrafica_OpenMax(nomeDataset)        
-    #criacao do modelo de rede neural
-    model = PlainCNN(num_classes=10-len(UUC_classes)).to(device)
     optimizer = optim.SGD(model.parameters(), lr=lr, momentum=0.9, weight_decay=5e-4)
 
-    #loop treino/validacao/teste
+    t_loss,t_acc=[],[]
+    v_loss,v_acc=[],[]
+
     for epoch in range(epochs):
-        train_loss, train_acc = train(train_loader, model, criterion, optimizer)
-        val_loss, val_acc = validation(val_loader,model,criterion)
+    
+        train_loss, train_acc = train(train_dataloader, model, criterion, optimizer)
+        val_loss, val_acc = validation(val_dataloader,model,criterion)
+        t_loss.append(train_loss)
+        t_acc.append(train_acc)
+        v_loss.append(val_loss)
+        v_acc.append(val_acc)
+        print(f"Epoch {epoch+1}/{epochs} | Loss: {train_loss:.4f} | Acc: {train_acc:.4f}| lr = {optimizer.param_groups[0]['lr']}")
+        print(f"VALIDATION || Epoch {epoch+1}/{epochs} | Loss: {val_loss:.4f} | Acc: {val_acc:.4f}| lr = {optimizer.param_groups[0]['lr']}")
 
-        print(f"Epoch {epoch+1}/{epochs} | Loss: {train_loss:.4f} | Acc: {train_acc:.4f}| lr = {optimizer.param_groups[0]['lr']}") 
+    plt.figure(figsize=(8,5))
+    e = range(0,epochs)
+    plt.plot(e, t_loss, 'red', label='Train Loss')
+    plt.plot(e, v_loss, 'orange', label='Val Loss')
+    plt.plot(e, t_acc, 'blue', label='Train Acc')
+    plt.plot(e, v_acc, 'purple', label='Val Acc')
 
-
-
-    nome_classes_originais = ["omniglot",0,1,2,3,4,5,6,7,8,9]
-    for tailsize in range(min_tailsize,max_tailsize+1,200):
+    plt.xlabel('Épocas')
+    plt.xticks(e)
+    plt.ylabel('Valor')
+    plt.ylim(0,2)
+    plt.title(f'Evolução de Loss e Acurácia')
+    plt.legend()
+    plt.grid(True, linestyle='--', alpha=0.6)
+    plt.tight_layout()
+    
+    #DESCOMENTAR PARA PLOTAR
+    
+    
+    plt.savefig(output_dir+f"Validacao.png")
         
-        print(f"tail = {tailsize} e alpha = {alpha}")
-        model.eval()
-        detector = OpenMax(model, tailsize=tailsize, alpha=alpha, euclid_weight=1,epsilon=epsilon)
-        with torch.no_grad():
-            detector.fit(train_loader,device=device)#ajuste do openmax
-            metricas = test(test_loader,detector)
-        confusion_matrix(test_loader,targets_antigos,nome_classes_originais,UUC_classes,detector,alpha,tailsize,epsilon)
-        del detector
-        gc.collect()
-        torch.cuda.empty_cache()
+    
 
-#confusion_matrix(test_loader,targets_antigos,nome_classes_originais,UUC_classes,detector,alpha,tailsize)
 
-#analiseGrafica.mostraGrafico(tail=tailsize,alpha=alpha,epsilon=epsilon)
+    # Configurações
+    min_tailsize = 0
+    max_tailsize = 600
+    step_tail = 100
+    min_alpha = 1
+    max_alpha = 10
+    epsilons = [0.2,0.3,0.5,0.7,0.9]
 
-        resultados_grid_search.loc[len(resultados_grid_search)] = [tailsize,metricas['accuracy'][0],metricas['UUC Accuracy'][0],metricas['inner metric'][0],metricas['outer metric'][0],metricas['F1 macro'],metricas['halfpoint'][0]]
+    for alpha in range(min_alpha,max_alpha+1):
+
+        for epsilon in epsilons:
+            
+            results_by_tail = {}
+            
+            matrizes_confusao = [None for _ in range(min_tailsize, max_tailsize+1, step_tail)]
+            #print(matrizes_confusao)
+        
+            torch.cuda.empty_cache()
+            gc.collect()
+            
+            model.eval()
+
+            all_targets = np.array([])
+
+            for (_, y) in test_dataloader:
+                for target in y:
+                    all_targets= np.append(all_targets,target.detach().cpu())
 
             
-    resultados_grid_search.to_csv("/home/alexandreselani/Desktop/pytorch-ood/resultados/"+f"resultados_grid_search{nomeDataset}.csv",index=False)
+            for idx,tail in enumerate(range(min_tailsize, max_tailsize+1, step_tail)):
+
+                # Fit e Teste
+                # Nota: O Fit ainda pode ser demorado, mas economizamos o load do modelo
+                detector = OpenMax(model, tailsize=tail, alpha=alpha, euclid_weight=1, epsilon=epsilon)
+                
+                # Ajuste (Fit) - Geralmente precisa passar os dados de treino para calcular os centros/weibulls
+                detector.fit(train_dataloader, device=device)
+                
+                metricas,predicts,targets_test = test(test_dataloader, detector)
+                
+                matriz = mc(predicts,targets_test,all_targets,[],["Omniglot",0,1,2,3,4,5,6,7,8,9])
+                matriz.computa_matriz()
+                matrizes_confusao[idx] = matriz
             
+                # Guardar métricas deste fold para este tail
+                results_by_tail[tail] = {
+                "tail": tail,
+                "f1_macro": metricas["F1 macro"],
+                "accuracy": metricas["accuracy"][0],
+                "uuc_accuracy": metricas["UUC Accuracy"][0],
+                "inner_metric": metricas["inner metric"][0],
+                "outer_metric": metricas["outer metric"][0],
+                "halfpoint": metricas["halfpoint"][0]
+                }
+
+
+                del detector
+                gc.collect()
+                torch.cuda.empty_cache()
             
-    with(open("/home/alexandreselani/Desktop/pytorch-ood/resultados/"+f"resultados_grid_search{nomeDataset}.txt","w")) as f:
-        f.write(f"Resultados do Grid Search OpenMax para {nomeDataset}, com alpha = {alpha} e epsilon = {epsilon}\n\n")
-        f.write(resultados_grid_search.to_string())
-        f.write("\n")
-        f.write(f"Maior acuracia: {resultados_grid_search.loc[resultados_grid_search['accuracy'].idxmax()]['tail']}\n")
-        f.write(f"Maior F1: {resultados_grid_search.loc[resultados_grid_search['F1 macro'].idxmax()]['tail']}\n")
-        f.write(f"Maior inner metric: {resultados_grid_search.loc[resultados_grid_search['inner metric'].idxmax()]['tail']}\n")
-        f.write(f"Maior outer metric: {resultados_grid_search.loc[resultados_grid_search['outer metric'].idxmax()]['tail']}\n")
-        f.write(f"Maior halfpoint: {resultados_grid_search.loc[resultados_grid_search['halfpoint'].idxmax()]['tail']}\n")
-        f.write(f"Maior uuc accuracy: {resultados_grid_search.loc[resultados_grid_search['UUC Accuracy'].idxmax()]['tail']}\n")
+            final_data = []
 
-        
+            for tail in sorted(results_by_tail.keys()):
+                metrics = results_by_tail[tail]
+                final_data.append(metrics)
 
-        
+            df = pd.DataFrame(final_data)
 
-    
-    
-   
-    
-    
-        
+            
+            # Nome dinâmico correto
+            pasta = f"alpha_{alpha}/epsilon_{epsilon}/"
+            filename_csv = f"Resultados_grid_mnist_omniglot_tail_{min_tailsize}_{max_tailsize}_eps_{epsilon}_alpha_{alpha}.csv"
+            organized_dir = os.path.join(output_dir, pasta)
+
+            os.makedirs(organized_dir, exist_ok=True)
+
+            csv_path = os.path.join(organized_dir,filename_csv)
+            
+            for idx,m in enumerate(matrizes_confusao):
+                m.exibe_matriz(dir=organized_dir,name=f"tail_{idx*step_tail}")
+
+            df.to_csv(csv_path, index=False)
+            print(f"Arquivo salvo: {csv_path}")
+
+
     
 if __name__ == '__main__':
     main()
+
+
 
