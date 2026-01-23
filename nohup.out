@@ -1,0 +1,529 @@
+Tamanho treino mnist: 54000
+Tamanho teste mnist: 10000
+Tamanho teste omniglot: 10000
+Tamanho validacao omniglot: 6000
+Tamanho validacao mnist: 6000
+Epoch 1/25 | Loss: 2.3015 | Acc: 0.1155| lr = 0.0008
+VALIDATION || Epoch 1/25 | Loss: 2.3003 | Acc: 0.1147| lr = 0.0008
+Epoch 2/25 | Loss: 2.2999 | Acc: 0.1140| lr = 0.0008
+VALIDATION || Epoch 2/25 | Loss: 2.2980 | Acc: 0.1147| lr = 0.0008
+Epoch 3/25 | Loss: 2.2975 | Acc: 0.1133| lr = 0.0008
+VALIDATION || Epoch 3/25 | Loss: 2.2936 | Acc: 0.1150| lr = 0.0008
+Epoch 4/25 | Loss: 2.2921 | Acc: 0.1558| lr = 0.0008
+VALIDATION || Epoch 4/25 | Loss: 2.2805 | Acc: 0.3103| lr = 0.0008
+Epoch 5/25 | Loss: 2.2573 | Acc: 0.2430| lr = 0.0008
+VALIDATION || Epoch 5/25 | Loss: 2.1321 | Acc: 0.2357| lr = 0.0008
+Epoch 6/25 | Loss: 1.7702 | Acc: 0.3327| lr = 0.0008
+VALIDATION || Epoch 6/25 | Loss: 1.2868 | Acc: 0.6075| lr = 0.0008
+Epoch 7/25 | Loss: 0.8041 | Acc: 0.7251| lr = 0.0008
+VALIDATION || Epoch 7/25 | Loss: 0.4011 | Acc: 0.8747| lr = 0.0008
+Epoch 8/25 | Loss: 0.3158 | Acc: 0.9035| lr = 0.0008
+VALIDATION || Epoch 8/25 | Loss: 0.2045 | Acc: 0.9403| lr = 0.0008
+Epoch 9/25 | Loss: 0.1835 | Acc: 0.9443| lr = 0.0008
+VALIDATION || Epoch 9/25 | Loss: 0.1480 | Acc: 0.9580| lr = 0.0008
+Epoch 10/25 | Loss: 0.1360 | Acc: 0.9588| lr = 0.0008
+VALIDATION || Epoch 10/25 | Loss: 0.1127 | Acc: 0.9658| lr = 0.0008
+Epoch 11/25 | Loss: 0.1098 | Acc: 0.9675| lr = 0.0008
+VALIDATION || Epoch 11/25 | Loss: 0.1077 | Acc: 0.9677| lr = 0.0008
+Epoch 12/25 | Loss: 0.0898 | Acc: 0.9731| lr = 0.0008
+VALIDATION || Epoch 12/25 | Loss: 0.0764 | Acc: 0.9770| lr = 0.0008
+Epoch 13/25 | Loss: 0.0789 | Acc: 0.9761| lr = 0.0008
+VALIDATION || Epoch 13/25 | Loss: 0.0744 | Acc: 0.9760| lr = 0.0008
+Epoch 14/25 | Loss: 0.0720 | Acc: 0.9780| lr = 0.0008
+VALIDATION || Epoch 14/25 | Loss: 0.0688 | Acc: 0.9785| lr = 0.0008
+Epoch 15/25 | Loss: 0.0659 | Acc: 0.9799| lr = 0.0008
+VALIDATION || Epoch 15/25 | Loss: 0.0623 | Acc: 0.9813| lr = 0.0008
+Epoch 16/25 | Loss: 0.0585 | Acc: 0.9820| lr = 0.0008
+VALIDATION || Epoch 16/25 | Loss: 0.0596 | Acc: 0.9810| lr = 0.0008
+Epoch 17/25 | Loss: 0.0556 | Acc: 0.9829| lr = 0.0008
+VALIDATION || Epoch 17/25 | Loss: 0.0597 | Acc: 0.9832| lr = 0.0008
+Epoch 18/25 | Loss: 0.0495 | Acc: 0.9845| lr = 0.0008
+VALIDATION || Epoch 18/25 | Loss: 0.0511 | Acc: 0.9848| lr = 0.0008
+Epoch 19/25 | Loss: 0.0444 | Acc: 0.9859| lr = 0.0008
+VALIDATION || Epoch 19/25 | Loss: 0.0494 | Acc: 0.9850| lr = 0.0008
+Epoch 20/25 | Loss: 0.0434 | Acc: 0.9862| lr = 0.0008
+VALIDATION || Epoch 20/25 | Loss: 0.0606 | Acc: 0.9828| lr = 0.0008
+Epoch 21/25 | Loss: 0.0404 | Acc: 0.9874| lr = 0.0008
+VALIDATION || Epoch 21/25 | Loss: 0.0460 | Acc: 0.9867| lr = 0.0008
+Epoch 22/25 | Loss: 0.0388 | Acc: 0.9880| lr = 0.0008
+VALIDATION || Epoch 22/25 | Loss: 0.0444 | Acc: 0.9872| lr = 0.0008
+Epoch 23/25 | Loss: 0.0378 | Acc: 0.9881| lr = 0.0008
+VALIDATION || Epoch 23/25 | Loss: 0.0568 | Acc: 0.9825| lr = 0.0008
+Epoch 24/25 | Loss: 0.0323 | Acc: 0.9902| lr = 0.0008
+VALIDATION || Epoch 24/25 | Loss: 0.0438 | Acc: 0.9867| lr = 0.0008
+Epoch 25/25 | Loss: 0.0315 | Acc: 0.9902| lr = 0.0008
+VALIDATION || Epoch 25/25 | Loss: 0.0434 | Acc: 0.9867| lr = 0.0008
+1 0 0.5
+1 100 0.5
+1 200 0.5
+1 300 0.5
+1 400 0.5
+1 500 0.5
+1 600 0.5
+1 700 0.5
+Arquivo salvo: /home/alexandreselani/Desktop/pytorch-ood/pytorch-ood/experimento_mnist_omniglot/Resultados OpenMax/alpha_1/epsilon_0.5/Resultados_grid_mnist_omniglot_tail_0_700_eps_0.5_alpha_1.csv
+1 0 0.6
+1 100 0.6
+1 200 0.6
+1 300 0.6
+1 400 0.6
+1 500 0.6
+1 600 0.6
+1 700 0.6
+Arquivo salvo: /home/alexandreselani/Desktop/pytorch-ood/pytorch-ood/experimento_mnist_omniglot/Resultados OpenMax/alpha_1/epsilon_0.6/Resultados_grid_mnist_omniglot_tail_0_700_eps_0.6_alpha_1.csv
+1 0 0.7
+1 100 0.7
+1 200 0.7
+1 300 0.7
+1 400 0.7
+1 500 0.7
+1 600 0.7
+1 700 0.7
+Arquivo salvo: /home/alexandreselani/Desktop/pytorch-ood/pytorch-ood/experimento_mnist_omniglot/Resultados OpenMax/alpha_1/epsilon_0.7/Resultados_grid_mnist_omniglot_tail_0_700_eps_0.7_alpha_1.csv
+1 0 0.8
+1 100 0.8
+1 200 0.8
+1 300 0.8
+1 400 0.8
+1 500 0.8
+1 600 0.8
+1 700 0.8
+Arquivo salvo: /home/alexandreselani/Desktop/pytorch-ood/pytorch-ood/experimento_mnist_omniglot/Resultados OpenMax/alpha_1/epsilon_0.8/Resultados_grid_mnist_omniglot_tail_0_700_eps_0.8_alpha_1.csv
+1 0 0.9
+1 100 0.9
+1 200 0.9
+1 300 0.9
+1 400 0.9
+1 500 0.9
+1 600 0.9
+1 700 0.9
+Arquivo salvo: /home/alexandreselani/Desktop/pytorch-ood/pytorch-ood/experimento_mnist_omniglot/Resultados OpenMax/alpha_1/epsilon_0.9/Resultados_grid_mnist_omniglot_tail_0_700_eps_0.9_alpha_1.csv
+2 0 0.5
+2 100 0.5
+2 200 0.5
+2 300 0.5
+2 400 0.5
+2 500 0.5
+2 600 0.5
+2 700 0.5
+Arquivo salvo: /home/alexandreselani/Desktop/pytorch-ood/pytorch-ood/experimento_mnist_omniglot/Resultados OpenMax/alpha_2/epsilon_0.5/Resultados_grid_mnist_omniglot_tail_0_700_eps_0.5_alpha_2.csv
+2 0 0.6
+2 100 0.6
+2 200 0.6
+2 300 0.6
+2 400 0.6
+2 500 0.6
+2 600 0.6
+2 700 0.6
+Arquivo salvo: /home/alexandreselani/Desktop/pytorch-ood/pytorch-ood/experimento_mnist_omniglot/Resultados OpenMax/alpha_2/epsilon_0.6/Resultados_grid_mnist_omniglot_tail_0_700_eps_0.6_alpha_2.csv
+2 0 0.7
+2 100 0.7
+2 200 0.7
+2 300 0.7
+2 400 0.7
+2 500 0.7
+2 600 0.7
+2 700 0.7
+Arquivo salvo: /home/alexandreselani/Desktop/pytorch-ood/pytorch-ood/experimento_mnist_omniglot/Resultados OpenMax/alpha_2/epsilon_0.7/Resultados_grid_mnist_omniglot_tail_0_700_eps_0.7_alpha_2.csv
+2 0 0.8
+2 100 0.8
+2 200 0.8
+2 300 0.8
+2 400 0.8
+2 500 0.8
+2 600 0.8
+2 700 0.8
+Arquivo salvo: /home/alexandreselani/Desktop/pytorch-ood/pytorch-ood/experimento_mnist_omniglot/Resultados OpenMax/alpha_2/epsilon_0.8/Resultados_grid_mnist_omniglot_tail_0_700_eps_0.8_alpha_2.csv
+2 0 0.9
+2 100 0.9
+2 200 0.9
+2 300 0.9
+2 400 0.9
+2 500 0.9
+2 600 0.9
+2 700 0.9
+Arquivo salvo: /home/alexandreselani/Desktop/pytorch-ood/pytorch-ood/experimento_mnist_omniglot/Resultados OpenMax/alpha_2/epsilon_0.9/Resultados_grid_mnist_omniglot_tail_0_700_eps_0.9_alpha_2.csv
+3 0 0.5
+3 100 0.5
+3 200 0.5
+3 300 0.5
+3 400 0.5
+3 500 0.5
+3 600 0.5
+3 700 0.5
+Arquivo salvo: /home/alexandreselani/Desktop/pytorch-ood/pytorch-ood/experimento_mnist_omniglot/Resultados OpenMax/alpha_3/epsilon_0.5/Resultados_grid_mnist_omniglot_tail_0_700_eps_0.5_alpha_3.csv
+3 0 0.6
+3 100 0.6
+3 200 0.6
+3 300 0.6
+3 400 0.6
+3 500 0.6
+3 600 0.6
+3 700 0.6
+Arquivo salvo: /home/alexandreselani/Desktop/pytorch-ood/pytorch-ood/experimento_mnist_omniglot/Resultados OpenMax/alpha_3/epsilon_0.6/Resultados_grid_mnist_omniglot_tail_0_700_eps_0.6_alpha_3.csv
+3 0 0.7
+3 100 0.7
+3 200 0.7
+3 300 0.7
+3 400 0.7
+3 500 0.7
+3 600 0.7
+3 700 0.7
+Arquivo salvo: /home/alexandreselani/Desktop/pytorch-ood/pytorch-ood/experimento_mnist_omniglot/Resultados OpenMax/alpha_3/epsilon_0.7/Resultados_grid_mnist_omniglot_tail_0_700_eps_0.7_alpha_3.csv
+3 0 0.8
+3 100 0.8
+3 200 0.8
+3 300 0.8
+3 400 0.8
+3 500 0.8
+3 600 0.8
+3 700 0.8
+Arquivo salvo: /home/alexandreselani/Desktop/pytorch-ood/pytorch-ood/experimento_mnist_omniglot/Resultados OpenMax/alpha_3/epsilon_0.8/Resultados_grid_mnist_omniglot_tail_0_700_eps_0.8_alpha_3.csv
+3 0 0.9
+3 100 0.9
+3 200 0.9
+3 300 0.9
+3 400 0.9
+3 500 0.9
+3 600 0.9
+3 700 0.9
+Arquivo salvo: /home/alexandreselani/Desktop/pytorch-ood/pytorch-ood/experimento_mnist_omniglot/Resultados OpenMax/alpha_3/epsilon_0.9/Resultados_grid_mnist_omniglot_tail_0_700_eps_0.9_alpha_3.csv
+Arquivo salvo: melhor resultado
+Melhores hiperparametros 
+ {'alpha': 2, 'epsilon': 0.9, 'tail': 400}
+Tamanho treino mnist: 54000
+Tamanho teste mnist: 10000
+Tamanho teste omniglot: 10000
+Tamanho validacao omniglot: 6000
+Tamanho validacao mnist: 6000
+Epoch 1/25 | Loss: 2.3015 | Acc: 0.1155| lr = 0.0008
+VALIDATION || Epoch 1/25 | Loss: 2.3003 | Acc: 0.1147| lr = 0.0008
+Epoch 2/25 | Loss: 2.2999 | Acc: 0.1140| lr = 0.0008
+VALIDATION || Epoch 2/25 | Loss: 2.2980 | Acc: 0.1147| lr = 0.0008
+Epoch 3/25 | Loss: 2.2975 | Acc: 0.1133| lr = 0.0008
+VALIDATION || Epoch 3/25 | Loss: 2.2936 | Acc: 0.1150| lr = 0.0008
+Epoch 4/25 | Loss: 2.2921 | Acc: 0.1556| lr = 0.0008
+VALIDATION || Epoch 4/25 | Loss: 2.2806 | Acc: 0.3105| lr = 0.0008
+Epoch 5/25 | Loss: 2.2574 | Acc: 0.2430| lr = 0.0008
+VALIDATION || Epoch 5/25 | Loss: 2.1329 | Acc: 0.2358| lr = 0.0008
+Epoch 6/25 | Loss: 1.7711 | Acc: 0.3329| lr = 0.0008
+VALIDATION || Epoch 6/25 | Loss: 1.2882 | Acc: 0.6060| lr = 0.0008
+Epoch 7/25 | Loss: 0.8051 | Acc: 0.7246| lr = 0.0008
+VALIDATION || Epoch 7/25 | Loss: 0.3999 | Acc: 0.8743| lr = 0.0008
+Epoch 8/25 | Loss: 0.3164 | Acc: 0.9034| lr = 0.0008
+VALIDATION || Epoch 8/25 | Loss: 0.2050 | Acc: 0.9402| lr = 0.0008
+Epoch 9/25 | Loss: 0.1836 | Acc: 0.9445| lr = 0.0008
+VALIDATION || Epoch 9/25 | Loss: 0.1479 | Acc: 0.9583| lr = 0.0008
+Epoch 10/25 | Loss: 0.1363 | Acc: 0.9585| lr = 0.0008
+VALIDATION || Epoch 10/25 | Loss: 0.1123 | Acc: 0.9650| lr = 0.0008
+Epoch 11/25 | Loss: 0.1096 | Acc: 0.9676| lr = 0.0008
+VALIDATION || Epoch 11/25 | Loss: 0.1073 | Acc: 0.9675| lr = 0.0008
+Epoch 12/25 | Loss: 0.0898 | Acc: 0.9731| lr = 0.0008
+VALIDATION || Epoch 12/25 | Loss: 0.0760 | Acc: 0.9768| lr = 0.0008
+Epoch 13/25 | Loss: 0.0789 | Acc: 0.9761| lr = 0.0008
+VALIDATION || Epoch 13/25 | Loss: 0.0740 | Acc: 0.9767| lr = 0.0008
+Epoch 14/25 | Loss: 0.0720 | Acc: 0.9781| lr = 0.0008
+VALIDATION || Epoch 14/25 | Loss: 0.0691 | Acc: 0.9785| lr = 0.0008
+Epoch 15/25 | Loss: 0.0659 | Acc: 0.9800| lr = 0.0008
+VALIDATION || Epoch 15/25 | Loss: 0.0618 | Acc: 0.9812| lr = 0.0008
+Epoch 16/25 | Loss: 0.0584 | Acc: 0.9820| lr = 0.0008
+VALIDATION || Epoch 16/25 | Loss: 0.0590 | Acc: 0.9807| lr = 0.0008
+Epoch 17/25 | Loss: 0.0554 | Acc: 0.9830| lr = 0.0008
+VALIDATION || Epoch 17/25 | Loss: 0.0589 | Acc: 0.9833| lr = 0.0008
+Epoch 18/25 | Loss: 0.0495 | Acc: 0.9848| lr = 0.0008
+VALIDATION || Epoch 18/25 | Loss: 0.0506 | Acc: 0.9850| lr = 0.0008
+Epoch 19/25 | Loss: 0.0442 | Acc: 0.9861| lr = 0.0008
+VALIDATION || Epoch 19/25 | Loss: 0.0489 | Acc: 0.9853| lr = 0.0008
+Epoch 20/25 | Loss: 0.0434 | Acc: 0.9862| lr = 0.0008
+VALIDATION || Epoch 20/25 | Loss: 0.0615 | Acc: 0.9815| lr = 0.0008
+Epoch 21/25 | Loss: 0.0404 | Acc: 0.9871| lr = 0.0008
+VALIDATION || Epoch 21/25 | Loss: 0.0457 | Acc: 0.9865| lr = 0.0008
+Epoch 22/25 | Loss: 0.0387 | Acc: 0.9883| lr = 0.0008
+VALIDATION || Epoch 22/25 | Loss: 0.0443 | Acc: 0.9873| lr = 0.0008
+Epoch 23/25 | Loss: 0.0380 | Acc: 0.9879| lr = 0.0008
+VALIDATION || Epoch 23/25 | Loss: 0.0559 | Acc: 0.9825| lr = 0.0008
+Epoch 24/25 | Loss: 0.0322 | Acc: 0.9901| lr = 0.0008
+VALIDATION || Epoch 24/25 | Loss: 0.0436 | Acc: 0.9863| lr = 0.0008
+Epoch 25/25 | Loss: 0.0317 | Acc: 0.9901| lr = 0.0008
+VALIDATION || Epoch 25/25 | Loss: 0.0436 | Acc: 0.9865| lr = 0.0008
+1 0 0.5
+1 100 0.5
+1 200 0.5
+1 300 0.5
+1 400 0.5
+1 500 0.5
+1 600 0.5
+1 700 0.5
+Arquivo salvo: /home/alexandreselani/Desktop/pytorch-ood/pytorch-ood/experimento_mnist_omniglot/Resultados OpenMax/alpha_1/epsilon_0.5/Resultados_grid_mnist_omniglot_tail_0_700_eps_0.5_alpha_1.csv
+1 0 0.6
+1 100 0.6
+1 200 0.6
+1 300 0.6
+1 400 0.6
+1 500 0.6
+1 600 0.6
+1 700 0.6
+Arquivo salvo: /home/alexandreselani/Desktop/pytorch-ood/pytorch-ood/experimento_mnist_omniglot/Resultados OpenMax/alpha_1/epsilon_0.6/Resultados_grid_mnist_omniglot_tail_0_700_eps_0.6_alpha_1.csv
+1 0 0.7
+1 100 0.7
+1 200 0.7
+1 300 0.7
+1 400 0.7
+1 500 0.7
+1 600 0.7
+1 700 0.7
+Arquivo salvo: /home/alexandreselani/Desktop/pytorch-ood/pytorch-ood/experimento_mnist_omniglot/Resultados OpenMax/alpha_1/epsilon_0.7/Resultados_grid_mnist_omniglot_tail_0_700_eps_0.7_alpha_1.csv
+1 0 0.8
+1 100 0.8
+1 200 0.8
+1 300 0.8
+1 400 0.8
+1 500 0.8
+1 600 0.8
+1 700 0.8
+Arquivo salvo: /home/alexandreselani/Desktop/pytorch-ood/pytorch-ood/experimento_mnist_omniglot/Resultados OpenMax/alpha_1/epsilon_0.8/Resultados_grid_mnist_omniglot_tail_0_700_eps_0.8_alpha_1.csv
+1 0 0.9
+1 100 0.9
+1 200 0.9
+1 300 0.9
+1 400 0.9
+1 500 0.9
+1 600 0.9
+1 700 0.9
+Arquivo salvo: /home/alexandreselani/Desktop/pytorch-ood/pytorch-ood/experimento_mnist_omniglot/Resultados OpenMax/alpha_1/epsilon_0.9/Resultados_grid_mnist_omniglot_tail_0_700_eps_0.9_alpha_1.csv
+2 0 0.5
+2 100 0.5
+2 200 0.5
+2 300 0.5
+2 400 0.5
+2 500 0.5
+2 600 0.5
+2 700 0.5
+Arquivo salvo: /home/alexandreselani/Desktop/pytorch-ood/pytorch-ood/experimento_mnist_omniglot/Resultados OpenMax/alpha_2/epsilon_0.5/Resultados_grid_mnist_omniglot_tail_0_700_eps_0.5_alpha_2.csv
+2 0 0.6
+2 100 0.6
+2 200 0.6
+2 300 0.6
+2 400 0.6
+2 500 0.6
+2 600 0.6
+2 700 0.6
+Arquivo salvo: /home/alexandreselani/Desktop/pytorch-ood/pytorch-ood/experimento_mnist_omniglot/Resultados OpenMax/alpha_2/epsilon_0.6/Resultados_grid_mnist_omniglot_tail_0_700_eps_0.6_alpha_2.csv
+2 0 0.7
+2 100 0.7
+2 200 0.7
+2 300 0.7
+2 400 0.7
+2 500 0.7
+2 600 0.7
+2 700 0.7
+Arquivo salvo: /home/alexandreselani/Desktop/pytorch-ood/pytorch-ood/experimento_mnist_omniglot/Resultados OpenMax/alpha_2/epsilon_0.7/Resultados_grid_mnist_omniglot_tail_0_700_eps_0.7_alpha_2.csv
+2 0 0.8
+2 100 0.8
+2 200 0.8
+2 300 0.8
+2 400 0.8
+2 500 0.8
+2 600 0.8
+2 700 0.8
+Arquivo salvo: /home/alexandreselani/Desktop/pytorch-ood/pytorch-ood/experimento_mnist_omniglot/Resultados OpenMax/alpha_2/epsilon_0.8/Resultados_grid_mnist_omniglot_tail_0_700_eps_0.8_alpha_2.csv
+2 0 0.9
+2 100 0.9
+2 200 0.9
+2 300 0.9
+2 400 0.9
+2 500 0.9
+2 600 0.9
+2 700 0.9
+Arquivo salvo: /home/alexandreselani/Desktop/pytorch-ood/pytorch-ood/experimento_mnist_omniglot/Resultados OpenMax/alpha_2/epsilon_0.9/Resultados_grid_mnist_omniglot_tail_0_700_eps_0.9_alpha_2.csv
+3 0 0.5
+3 100 0.5
+3 200 0.5
+3 300 0.5
+3 400 0.5
+3 500 0.5
+3 600 0.5
+3 700 0.5
+Arquivo salvo: /home/alexandreselani/Desktop/pytorch-ood/pytorch-ood/experimento_mnist_omniglot/Resultados OpenMax/alpha_3/epsilon_0.5/Resultados_grid_mnist_omniglot_tail_0_700_eps_0.5_alpha_3.csv
+3 0 0.6
+3 100 0.6
+3 200 0.6
+3 300 0.6
+3 400 0.6
+3 500 0.6
+3 600 0.6
+3 700 0.6
+Arquivo salvo: /home/alexandreselani/Desktop/pytorch-ood/pytorch-ood/experimento_mnist_omniglot/Resultados OpenMax/alpha_3/epsilon_0.6/Resultados_grid_mnist_omniglot_tail_0_700_eps_0.6_alpha_3.csv
+3 0 0.7
+3 100 0.7
+3 200 0.7
+3 300 0.7
+3 400 0.7
+3 500 0.7
+3 600 0.7
+3 700 0.7
+Arquivo salvo: /home/alexandreselani/Desktop/pytorch-ood/pytorch-ood/experimento_mnist_omniglot/Resultados OpenMax/alpha_3/epsilon_0.7/Resultados_grid_mnist_omniglot_tail_0_700_eps_0.7_alpha_3.csv
+3 0 0.8
+3 100 0.8
+3 200 0.8
+3 300 0.8
+3 400 0.8
+3 500 0.8
+3 600 0.8
+3 700 0.8
+Arquivo salvo: /home/alexandreselani/Desktop/pytorch-ood/pytorch-ood/experimento_mnist_omniglot/Resultados OpenMax/alpha_3/epsilon_0.8/Resultados_grid_mnist_omniglot_tail_0_700_eps_0.8_alpha_3.csv
+3 0 0.9
+3 100 0.9
+3 200 0.9
+3 300 0.9
+3 400 0.9
+3 500 0.9
+3 600 0.9
+3 700 0.9
+Arquivo salvo: /home/alexandreselani/Desktop/pytorch-ood/pytorch-ood/experimento_mnist_omniglot/Resultados OpenMax/alpha_3/epsilon_0.9/Resultados_grid_mnist_omniglot_tail_0_700_eps_0.9_alpha_3.csv
+Arquivo salvo: melhor resultado
+Melhores hiperparametros 
+ {'alpha': 2, 'epsilon': 0.9, 'tail': 300}
+Tamanho treino mnist: 54000
+Tamanho teste mnist: 10000
+Tamanho teste omniglot: 10000
+Tamanho validacao omniglot: 6000
+Tamanho validacao mnist: 6000
+1 0 0.5
+1 100 0.5
+1 200 0.5
+1 300 0.5
+1 400 0.5
+1 500 0.5
+1 600 0.5
+1 700 0.5
+Arquivo salvo: /home/alexandreselani/Desktop/pytorch-ood/pytorch-ood/experimento_mnist_omniglot/Resultados OpenMax/alpha_1/epsilon_0.5/Resultados_grid_mnist_omniglot_tail_0_700_eps_0.5_alpha_1.csv
+1 0 0.6
+1 100 0.6
+1 200 0.6
+1 300 0.6
+1 400 0.6
+1 500 0.6
+1 600 0.6
+1 700 0.6
+Arquivo salvo: /home/alexandreselani/Desktop/pytorch-ood/pytorch-ood/experimento_mnist_omniglot/Resultados OpenMax/alpha_1/epsilon_0.6/Resultados_grid_mnist_omniglot_tail_0_700_eps_0.6_alpha_1.csv
+1 0 0.7
+1 100 0.7
+1 200 0.7
+1 300 0.7
+1 400 0.7
+1 500 0.7
+1 600 0.7
+1 700 0.7
+Arquivo salvo: /home/alexandreselani/Desktop/pytorch-ood/pytorch-ood/experimento_mnist_omniglot/Resultados OpenMax/alpha_1/epsilon_0.7/Resultados_grid_mnist_omniglot_tail_0_700_eps_0.7_alpha_1.csv
+1 0 0.8
+1 100 0.8
+1 200 0.8
+1 300 0.8
+1 400 0.8
+1 500 0.8
+1 600 0.8
+1 700 0.8
+Arquivo salvo: /home/alexandreselani/Desktop/pytorch-ood/pytorch-ood/experimento_mnist_omniglot/Resultados OpenMax/alpha_1/epsilon_0.8/Resultados_grid_mnist_omniglot_tail_0_700_eps_0.8_alpha_1.csv
+1 0 0.9
+1 100 0.9
+1 200 0.9
+1 300 0.9
+1 400 0.9
+1 500 0.9
+1 600 0.9
+1 700 0.9
+Arquivo salvo: /home/alexandreselani/Desktop/pytorch-ood/pytorch-ood/experimento_mnist_omniglot/Resultados OpenMax/alpha_1/epsilon_0.9/Resultados_grid_mnist_omniglot_tail_0_700_eps_0.9_alpha_1.csv
+2 0 0.5
+2 100 0.5
+2 200 0.5
+2 300 0.5
+2 400 0.5
+2 500 0.5
+2 600 0.5
+2 700 0.5
+Arquivo salvo: /home/alexandreselani/Desktop/pytorch-ood/pytorch-ood/experimento_mnist_omniglot/Resultados OpenMax/alpha_2/epsilon_0.5/Resultados_grid_mnist_omniglot_tail_0_700_eps_0.5_alpha_2.csv
+2 0 0.6
+2 100 0.6
+2 200 0.6
+2 300 0.6
+2 400 0.6
+2 500 0.6
+2 600 0.6
+2 700 0.6
+Arquivo salvo: /home/alexandreselani/Desktop/pytorch-ood/pytorch-ood/experimento_mnist_omniglot/Resultados OpenMax/alpha_2/epsilon_0.6/Resultados_grid_mnist_omniglot_tail_0_700_eps_0.6_alpha_2.csv
+2 0 0.7
+2 100 0.7
+2 200 0.7
+2 300 0.7
+2 400 0.7
+2 500 0.7
+2 600 0.7
+2 700 0.7
+Arquivo salvo: /home/alexandreselani/Desktop/pytorch-ood/pytorch-ood/experimento_mnist_omniglot/Resultados OpenMax/alpha_2/epsilon_0.7/Resultados_grid_mnist_omniglot_tail_0_700_eps_0.7_alpha_2.csv
+2 0 0.8
+2 100 0.8
+2 200 0.8
+2 300 0.8
+2 400 0.8
+2 500 0.8
+2 600 0.8
+2 700 0.8
+Arquivo salvo: /home/alexandreselani/Desktop/pytorch-ood/pytorch-ood/experimento_mnist_omniglot/Resultados OpenMax/alpha_2/epsilon_0.8/Resultados_grid_mnist_omniglot_tail_0_700_eps_0.8_alpha_2.csv
+2 0 0.9
+2 100 0.9
+2 200 0.9
+2 300 0.9
+2 400 0.9
+2 500 0.9
+2 600 0.9
+2 700 0.9
+Arquivo salvo: /home/alexandreselani/Desktop/pytorch-ood/pytorch-ood/experimento_mnist_omniglot/Resultados OpenMax/alpha_2/epsilon_0.9/Resultados_grid_mnist_omniglot_tail_0_700_eps_0.9_alpha_2.csv
+3 0 0.5
+3 100 0.5
+3 200 0.5
+3 300 0.5
+3 400 0.5
+3 500 0.5
+3 600 0.5
+3 700 0.5
+Arquivo salvo: /home/alexandreselani/Desktop/pytorch-ood/pytorch-ood/experimento_mnist_omniglot/Resultados OpenMax/alpha_3/epsilon_0.5/Resultados_grid_mnist_omniglot_tail_0_700_eps_0.5_alpha_3.csv
+3 0 0.6
+3 100 0.6
+3 200 0.6
+3 300 0.6
+3 400 0.6
+3 500 0.6
+3 600 0.6
+3 700 0.6
+Arquivo salvo: /home/alexandreselani/Desktop/pytorch-ood/pytorch-ood/experimento_mnist_omniglot/Resultados OpenMax/alpha_3/epsilon_0.6/Resultados_grid_mnist_omniglot_tail_0_700_eps_0.6_alpha_3.csv
+3 0 0.7
+3 100 0.7
+3 200 0.7
+3 300 0.7
+3 400 0.7
+3 500 0.7
+3 600 0.7
+3 700 0.7
+Arquivo salvo: /home/alexandreselani/Desktop/pytorch-ood/pytorch-ood/experimento_mnist_omniglot/Resultados OpenMax/alpha_3/epsilon_0.7/Resultados_grid_mnist_omniglot_tail_0_700_eps_0.7_alpha_3.csv
+3 0 0.8
+3 100 0.8
+3 200 0.8
+3 300 0.8
+3 400 0.8
+3 500 0.8
+3 600 0.8
+3 700 0.8
+Arquivo salvo: /home/alexandreselani/Desktop/pytorch-ood/pytorch-ood/experimento_mnist_omniglot/Resultados OpenMax/alpha_3/epsilon_0.8/Resultados_grid_mnist_omniglot_tail_0_700_eps_0.8_alpha_3.csv
+3 0 0.9
+3 100 0.9
+3 200 0.9
+3 300 0.9
+3 400 0.9
+3 500 0.9
+3 600 0.9
+3 700 0.9
+Arquivo salvo: /home/alexandreselani/Desktop/pytorch-ood/pytorch-ood/experimento_mnist_omniglot/Resultados OpenMax/alpha_3/epsilon_0.9/Resultados_grid_mnist_omniglot_tail_0_700_eps_0.9_alpha_3.csv
+Arquivo salvo: melhor resultado
+Melhores hiperparametros 
+ {'alpha': 2, 'epsilon': 0.9, 'tail': 300}

@@ -15,43 +15,34 @@ for Open Set Recognition but can be adapted for Out-of-Distribution tasks.
 label >= 0 --> conhecido
 
 O primeiro item dos logits é referente ao score para classe desconhecida, o restante é para as classes conhecidas
-
-TODO: 
-    REDE NEURAL MINHA: feito 
-    LOOP DE TREINAMENTO E TESTES: feito
-    ANALISE GRAFICA? feito
 """
-from torch.utils.data import DataLoader,ConcatDataset
-from torchvision.datasets import MNIST,Omniglot,ImageFolder
+from torch.utils.data import DataLoader
 import torch
-import torchvision.transforms as transforms
 from torchvision.models import alexnet
 import torch.nn as nn
 import torch.optim as optim
-from pytorch_ood.dataset.img import PanicumDataset_pytorchOOD
 from pytorch_ood.detector import OpenMax
-from pytorch_ood.model import PlainCNN_panicum
-from pytorch_ood.utils import OODMetrics, ToUnknown, fix_random_seed, metricasImplementadas,AnaliseGrafica_OpenMax,Matriz_confusao_osr_dataset_outlier_cumulativa as mc
-from pytorch_ood.utils.aux_dataset import *
-from sklearn.model_selection import StratifiedKFold,KFold,train_test_split
+from pytorch_ood.utils import metricasImplementadas,Matriz_confusao_osr_dataset_outlier_cumulativa as mc
 import numpy as np
 import matplotlib.pyplot as plt
 import os
 import pandas as pd
 import gc
-import copy
+from Modelos.AlexNet_backbone import Alexnet
+from Utils import fix_random_seed
+from Datasets.Load_Data import Mnist_omni_loader
 seed = 42
 fix_random_seed(seed)
 
 device = "cuda:0"
 
-ood_metrics = OODMetrics()
 
 
 def test(test_loader,detector):
     predicts=[]
     labels=[]
 
+    detector.model.eval()
     for X, y in test_loader:
         
         #score eh a ativacao de todas as classes apos a openmax
@@ -72,36 +63,14 @@ def test(test_loader,detector):
     metricas = metricasImplementadas(predict=predicts, label=labels)
 
     #print(ood_metrics.compute())
-    print(predicts,labels)
-    return metricas._metricas(),predicts,labels
-    
-def train(train_loader,model,criterion,optimizer):
-    model.train()
-    train_loss = 0
-    correct = 0
-    total = 0
-    for batch_idx, (inputs, targets) in enumerate(train_loader):
-        
-        inputs, targets = inputs.to(device), targets.to(device)
-        optimizer.zero_grad()
-        outputs = model(inputs)
-        
-        loss = criterion(outputs, targets)
-        
-        loss.backward()
-        optimizer.step()
-
-        train_loss += loss.item()
-        _, predicted = outputs.max(1)
-        total += targets.size(0)
-        correct += predicted.eq(targets).sum().item()
-    
-    return train_loss/(batch_idx+1), correct/total
+    #print(predicts,labels)
+    return metricas._metricas(),predicts,labels    
 
 def confusion_matrix(test_loader,targets_original,nome_classes_originais,UUC_classes,detector):
     predicts=[]
     labels=[]
 
+    
     for X, y in test_loader:
         #score eh a ativacao de todas as classes apos a openmax
         with torch.no_grad():
@@ -121,132 +90,33 @@ def confusion_matrix(test_loader,targets_original,nome_classes_originais,UUC_cla
     matriz_confusao.computa_matriz()
     matriz_confusao.exibe_matriz()
 
-def validation(val_loader,model,criterion):
-    model.eval()
-    val_loss = 0
-    correct = 0
-    total = 0
-
-    for batch_idx, (inputs, targets) in enumerate(val_loader):
-        inputs, targets = inputs.to(device), targets.to(device)
-        
-        with torch.no_grad():
-            outputs = model(inputs)
-            loss = criterion(outputs, targets)
-
-        val_loss += loss.item()
-        _, predicted = outputs.max(1)
-        total += targets.size(0)
-        correct += predicted.eq(targets).sum().item()
-
-    return val_loss/(batch_idx+1), correct/total
-
-
 
 def main():
     nomeDataset = "mnist_omniglot"
     # Diretório de saída
     output_dir = "/home/alexandreselani/Desktop/pytorch-ood/pytorch-ood/experimento_mnist_omniglot/Resultados OpenMax/"
     os.makedirs(output_dir, exist_ok=True)
-    #analiseGrafica = AnaliseGrafica_OpenMax(nomeDataset)
-
-    lr=0.0001
-    epochs = 70
-    bs=32
-
-    transform = transforms.Compose([
-    transforms.Grayscale(num_output_channels=3),
-    transforms.Resize(64),   # MUITO melhor que 224
-    transforms.ToTensor(),
-    transforms.Normalize(mean=[0.485, 0.456, 0.406],
-                         std=[0.229, 0.224, 0.225]),
-    ])
-
-    mnist_train = MNIST(root="./data/",download=True,transform=transform,train=True)
-    mnist_test = MNIST(root="./data/",download=True,transform=transform,train=False)
-    test_omniglot = Omniglot(root="./data/",download=True,transform=transform,target_transform=ToUnknown())
-    test_omniglot_reduzido = random_dataset(test_omniglot,10000)
-    val_omniglot = Omniglot(root="./data/",download=True,transform=transform,target_transform=ToUnknown(),background=False)
     
-    
-    model = alexnet()
-    model.classifier[6] = nn.Linear(
-        in_features=4096,
-        out_features=10
-    )
-    model = model.to(device)
+    model = Alexnet(num_classes=10)
+    model.load_state_dict(torch.load("/home/alexandreselani/Desktop/Experimento_mnist_omni/AlexNet_mnist_omni.pt"))
+    model.to(device=device)
+    bs = 256
 
-    
 
-    train_dataset,mnist_val_dataset = validation_split(0.1,mnist_train)
-    val_omniglot_reduzido = random_dataset(val_omniglot,len(mnist_val_dataset))
+    data = Mnist_omni_loader(bs)
 
-    grid_search_val_dataset = ConcatDataset([mnist_val_dataset,val_omniglot_reduzido])
-    test_dataset = ConcatDataset([test_omniglot_reduzido,mnist_test])
-    
-    print(f"Tamanho treino mnist: {len(train_dataset)}")
-    print(f"Tamanho teste mnist: {len(mnist_test)}")
-    print(f"Tamanho teste omniglot: {len(test_omniglot_reduzido)}")
-    print(f"Tamanho validacao omniglot: {len(val_omniglot_reduzido)}")
-    print(f"Tamanho validacao mnist: {len(mnist_val_dataset)}")
-
-        
-
-    train_dataloader = DataLoader(train_dataset,batch_size=bs,shuffle=True,num_workers=4)
-    val_mnist_dataloader = DataLoader(mnist_val_dataset,batch_size=bs,shuffle=True,num_workers=4)
-    grid_search_val_dataloader = DataLoader(grid_search_val_dataset,batch_size=bs,shuffle=False,num_workers=4)
-    test_dataloader = DataLoader(test_dataset,batch_size=bs,shuffle=False,num_workers=4)
-
-    
-
-    criterion = nn.CrossEntropyLoss()
-    optimizer = optim.SGD(model.parameters(), lr=lr, momentum=0.9, weight_decay=5e-4)
-
-    t_loss,t_acc=[],[]
-    v_loss,v_acc=[],[]
-
-    for epoch in range(epochs):
-    
-        train_loss, train_acc = train(train_dataloader, model, criterion, optimizer)
-        val_loss, val_acc = validation(val_mnist_dataloader,model,criterion)
-        t_loss.append(train_loss)
-        t_acc.append(train_acc)
-        v_loss.append(val_loss)
-        v_acc.append(val_acc)
-        print(f"Epoch {epoch+1}/{epochs} | Loss: {train_loss:.4f} | Acc: {train_acc:.4f}| lr = {optimizer.param_groups[0]['lr']}")
-        print(f"VALIDATION || Epoch {epoch+1}/{epochs} | Loss: {val_loss:.4f} | Acc: {val_acc:.4f}| lr = {optimizer.param_groups[0]['lr']}")
-
-    plt.figure(figsize=(8,5))
-    e = range(0,epochs)
-    plt.plot(e, t_loss, 'red', label='Train Loss')
-    plt.plot(e, v_loss, 'orange', label='Val Loss')
-    plt.plot(e, t_acc, 'blue', label='Train Acc')
-    plt.plot(e, v_acc, 'purple', label='Val Acc')
-
-    plt.xlabel('Épocas')
-    plt.xticks(e)
-    plt.ylabel('Valor')
-    plt.ylim(0,2)
-    plt.title(f'Evolução de Loss e Acurácia')
-    plt.legend()
-    plt.grid(True, linestyle='--', alpha=0.6)
-    plt.tight_layout()
-    
-    #DESCOMENTAR PARA PLOTAR
-    
-    
-    plt.savefig(output_dir+f"Validacao.png")
-        
-    
-
+    train_dataloader = data.load_train()
+    grid_search_val_dataloader = data.load_gridsearch()
+    test_dataloader = data.load_test()
 
     # grid search
     min_tailsize = 0
-    max_tailsize = 800
+    max_tailsize = 1000
     step_tail = 100
     min_alpha = 1
-    max_alpha = 10
-    epsilons = [0.2,0.3,0.5,0.7,0.9]
+    max_alpha = 3
+    
+    epsilons = np.arange(0.5, 1, 0.2).tolist()
 
     melhores_hiperparametros = {'alpha':None,
                                 'epsilon':None,
@@ -257,6 +127,7 @@ def main():
 
         for epsilon in epsilons:
             
+            epsilon = round(epsilon,1)
             matrizes_confusao = [None for _ in range(min_tailsize, max_tailsize+1, step_tail)]
             #print(matrizes_confusao)
         
@@ -273,9 +144,9 @@ def main():
                 for target in y:
                     all_targets= np.append(all_targets,target.detach().cpu())
 
-            
             for idx,tail in enumerate(range(min_tailsize, max_tailsize+1, step_tail)):
-
+                
+                print(alpha, tail, epsilon)
                 # Fit e Teste
                 # Nota: O Fit ainda pode ser demorado, mas economizamos o load do modelo
                 detector = OpenMax(model, tailsize=tail, alpha=alpha, euclid_weight=1, epsilon=epsilon)
@@ -337,9 +208,14 @@ def main():
 
     
     #RESULTADOS DO TESTE COM O MODELO SELECIONADO
-    detector = OpenMax(model, tailsize=melhores_hiperparametros["tail"],
-                              alpha=melhores_hiperparametros["alpha"], euclid_weight=1, 
-                              epsilon=melhores_hiperparametros["epsilon"])       
+    melhor_tail = melhores_hiperparametros["tail"]
+    melhor_epsilon = melhores_hiperparametros["epsilon"]
+    melhor_alpha = melhores_hiperparametros["alpha"]
+
+    detector = OpenMax(model, tailsize=melhor_tail,
+                              alpha=melhor_alpha, euclid_weight=1, 
+                              epsilon=melhor_epsilon)       
+    
     # Ajuste (Fit) - Geralmente precisa passar os dados de treino para calcular os centros/weibulls
     detector.fit(train_dataloader, device=device)
     
@@ -353,8 +229,8 @@ def main():
         for target in y:
             all_targets= np.append(all_targets,target.detach().cpu())
     
-    results_by_tail[tail] = {
-                "tail": tail,
+    results_by_tail[melhor_tail] = {
+                "tail": melhor_tail,
                 "f1_macro": metricas["F1 macro"],
                 "accuracy": metricas["accuracy"][0],
                 "uuc_accuracy": metricas["UUC Accuracy"][0],
@@ -383,6 +259,7 @@ def main():
     df.to_csv(organized_dir, index=False)
     print(f"Arquivo salvo: melhor resultado")
     print(f"Melhores hiperparametros \n {melhores_hiperparametros}")
+    
 if __name__ == '__main__':
     main()
 

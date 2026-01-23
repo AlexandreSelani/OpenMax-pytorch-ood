@@ -22,15 +22,16 @@ class AnaliseGrafica:
         
         self.titulo = f"metricas do {self.nome} "
 
-    def addEpoch(self,metricas:metricasImplementadas,epoch:int,train_loss=None,train_acc=None,val_loss=None,val_acc=None):
+    def addEpoch(self,metricas:metricasImplementadas=None,epoch:int=None,train_loss=None,train_acc=None,val_loss=None,val_acc=None):
         self.epochs.append(epoch)
 
-        self.test_accuracy.append(metricas["accuracy"][0])
-        self.inner_metric.append(metricas["inner metric"][0])
-        self.outer_metric.append(metricas["outer metric"][0])
-        self.halfpoint.append(metricas["halfpoint"][0])
-        self.uuc_accuracy.append(metricas["UUC Accuracy"][0])
-        self.F1.append(metricas["F1 macro"])
+        if(metricas):
+            self.test_accuracy.append(metricas["accuracy"][0])
+            self.inner_metric.append(metricas["inner metric"][0])
+            self.outer_metric.append(metricas["outer metric"][0])
+            self.halfpoint.append(metricas["halfpoint"][0])
+            self.uuc_accuracy.append(metricas["UUC Accuracy"][0])
+            self.F1.append(metricas["F1 macro"])
 
         if train_loss:
             self.train_loss.append(train_loss)

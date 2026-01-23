@@ -18,7 +18,7 @@ def random_dataset(dataset: VisionDataset, novo_tamanho: int):
     subset = Subset(dataset,indices)
     return subset
 
-def validation_split(porcentagem:float, dataset:VisionDataset):
+def validation_split(porcentagem:float, dataset:VisionDataset,seed):
     assert porcentagem > 0
     """Funcao que divide um conjunto de treino em dois subconjuntos disjuntos: de treino (novo) e de validacao
     
@@ -28,7 +28,7 @@ def validation_split(porcentagem:float, dataset:VisionDataset):
     validation_size = int(len(dataset)*porcentagem)
     train_size = len(dataset)-validation_size
 
-    generator = torch.Generator()
+    generator = torch.Generator().manual_seed(seed)
 
     
     train_dataset, val_dataset = random_split(dataset, [train_size, validation_size], generator=generator)
