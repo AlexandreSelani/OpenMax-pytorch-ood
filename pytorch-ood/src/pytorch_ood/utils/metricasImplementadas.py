@@ -1,8 +1,8 @@
 import numpy as np
-from sklearn.metrics import f1_score
+from sklearn.metrics import f1_score,roc_auc_score
 
 class metricasImplementadas:
-    def __init__(self,predict=None,label=None):
+    def __init__(self,predict=None,label=None,outlier_scores = None):
         
         self.predict = predict
 
@@ -10,15 +10,31 @@ class metricasImplementadas:
         self.unknown_class_idx=0
         self.label = label
         self.label= self.label+1
+        self.outlier_scores = outlier_scores
         
     def _metricas(self):
         #print(f"velho {self.label-1} novo {self.label}")
-        return {"accuracy": self._accuracy(),
-                "inner metric": self._inner_metric(),
-                "UUC Accuracy": self._UUC_Accuracy(),
-                "outer metric": self._outer_metric(),
-                "halfpoint": self._halfpoint(),
-                "F1 macro": self._f1_macro()}
+        res = {
+        "accuracy": self._accuracy(),
+        "inner metric": self._inner_metric(),
+        "UUC Accuracy": self._UUC_Accuracy(),
+        "outer metric": self._outer_metric(),
+        "halfpoint": self._halfpoint(),
+        "F1 macro": self._f1_macro(),
+        "auroc": self._AUROC()
+    }
+
+        # Nova lógica para arredondar 3 casas decimais
+        metrics_rounded = {}
+        for k, v in res.items():
+            if isinstance(v, tuple):
+                # Arredonda apenas o primeiro valor (a taxa) e mantém os contadores (inteiros)
+                metrics_rounded[k] = (round(v[0], 3), v[1], v[2])
+            else:
+                # Arredonda o float diretamente (F1 e AUROC)
+                metrics_rounded[k] = round(v, 3)
+                
+        return metrics_rounded
     
     def _accuracy(self) -> tuple[float,int,int]:
         """
@@ -33,7 +49,7 @@ class metricasImplementadas:
         """Retorna a acuracia levando em consideracao apenas as amostras de classes CONHECIDAS (Inner metric ou KKC Accuracy)"""
         assert len(self.predict) == len(self.label)
         
-        indices_amostras = [i for i,y in enumerate(self.label) if y != self.unknown_class_idx] #vetor com os indices das amostras que devem ser verificadas
+        indices_amostras = [i for i,(x,y) in enumerate(zip(self.predict,self.label)) if (y != self.unknown_class_idx and x!= self.unknown_class_idx)] #vetor com os indices das amostras que devem ser verificadas
         predicoes = [self.predict[i] for i in indices_amostras] #amostras a serem consideradas
 
         
@@ -64,7 +80,7 @@ class metricasImplementadas:
         corretas = 0
 
         for predicao, idx in zip(predicoes,indices_amostras):
-            if predicao == self.label[idx]: #se a predicao for correta
+            if predicao == self.unknown_class_idx: #se a predicao for correta
                 corretas+=1
 
         if(len(predicoes)>0):
@@ -92,11 +108,10 @@ class metricasImplementadas:
     def _halfpoint(self) -> tuple[float,int,int]:
         """Uma modificacao do Inner metric que tambem leva em consideracao falsos desconhecidos
         
-         
         """
         assert len(self.predict) == len(self.label)
         
-        indices_amostras = [i for i,(x,y) in enumerate(zip(self.predict,self.label)) if (y != self.unknown_class_idx or (y == self.unknown_class_idx and x!=self.unknown_class_idx))] #vetor com os indices das amostras que devem ser verificadas
+        indices_amostras = [i for i,(x,y) in enumerate(zip(self.predict,self.label)) if (y != self.unknown_class_idx)] #vetor com os indices das amostras que devem ser verificadas
 
         predicoes = [self.predict[i] for i in indices_amostras] #amostras a serem consideradas
 
@@ -118,3 +133,14 @@ class metricasImplementadas:
         """
         assert len(self.predict) == len(self.label)
         return f1_score(self.label, self.predict, average='macro')
+    
+    def _AUROC(self) -> float:
+        """Retorna a auroc"""
+        assert self.outlier_scores is not None
+        assert len(self.outlier_scores) == len(self.label)
+        y_true_bin = (self.label != self.unknown_class_idx).astype(int)
+        y_score = 1 - self.outlier_scores
+        return roc_auc_score(y_true_bin, y_score)
+
+
+        

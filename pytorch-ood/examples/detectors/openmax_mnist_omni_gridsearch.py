@@ -22,15 +22,16 @@ from torchvision.models import alexnet
 import torch.nn as nn
 import torch.optim as optim
 from pytorch_ood.detector import OpenMax
-from pytorch_ood.utils import metricasImplementadas,Matriz_confusao_osr_dataset_outlier_cumulativa as mc
+from pytorch_ood.utils import Matriz_confusao_osr_dataset_outlier_cumulativa as mc
 import numpy as np
 import matplotlib.pyplot as plt
 import os
 import pandas as pd
 import gc
-from Modelos.AlexNet_backbone import Alexnet
-from Utils import fix_random_seed
+from Modelos.ResNet18_backbone import ResNet18
+from Utils import fix_random_seed,metricasImplementadas,NOMES
 from Datasets.Load_Data import Mnist_omni_loader
+
 seed = 42
 fix_random_seed(seed)
 
@@ -41,6 +42,7 @@ device = "cuda:0"
 def test(test_loader,detector):
     predicts=[]
     labels=[]
+    outlier_scores = []
 
     detector.model.eval()
     for X, y in test_loader:
@@ -48,23 +50,28 @@ def test(test_loader,detector):
         #score eh a ativacao de todas as classes apos a openmax
         with torch.no_grad():
             score = detector(X.to(device))
+            
             #print(score)
             max_values, predicted = torch.max(score, dim=1)
             predict = torch.where(max_values >= detector.epsilon, predicted, torch.zeros_like(predicted))
 
-        
+        outlier_scores.append(score[:, 0].detach().cpu())
         predicts.append(predict.detach().cpu())
         labels.append(y.detach().cpu())
         
-    
+        
+    outlier_scores = torch.cat(outlier_scores, dim=0).cpu().numpy()
     predicts = torch.cat(predicts,dim=0).cpu().numpy()
     labels = torch.cat(labels,dim=0).cpu().numpy()
+    
+    print(labels.shape,outlier_scores.shape)
     #ood_metrics.update(score[:,0],y)
-    metricas = metricasImplementadas(predict=predicts, label=labels)
+    metricas = metricasImplementadas(predict=predicts, label=labels, outlier_scores=outlier_scores,metodo="openmax")
 
     #print(ood_metrics.compute())
     #print(predicts,labels)
-    return metricas._metricas(),predicts,labels    
+    
+    return metricas._metricas(),predicts,labels  
 
 def confusion_matrix(test_loader,targets_original,nome_classes_originais,UUC_classes,detector):
     predicts=[]
@@ -92,13 +99,13 @@ def confusion_matrix(test_loader,targets_original,nome_classes_originais,UUC_cla
 
 
 def main():
-    nomeDataset = "mnist_omniglot"
+    
     # Diretório de saída
     output_dir = "/home/alexandreselani/Desktop/pytorch-ood/pytorch-ood/experimento_mnist_omniglot/Resultados OpenMax/"
     os.makedirs(output_dir, exist_ok=True)
     
-    model = Alexnet(num_classes=10)
-    model.load_state_dict(torch.load("/home/alexandreselani/Desktop/Experimento_mnist_omni/AlexNet_mnist_omni.pt"))
+    model = ResNet18(num_classes=10)
+    model.load_state_dict(torch.load(NOMES.RESNET18_MNIST_OMNI))
     model.to(device=device)
     bs = 256
 
@@ -174,7 +181,8 @@ def main():
                 "uuc_accuracy": metricas["UUC Accuracy"][0],
                 "inner_metric": metricas["inner metric"][0],
                 "outer_metric": metricas["outer metric"][0],
-                "halfpoint": metricas["halfpoint"][0]
+                "halfpoint": metricas["halfpoint"][0],
+                "auroc": metricas["auroc"]
                 }
 
 
@@ -203,7 +211,7 @@ def main():
             for idx,m in enumerate(matrizes_confusao):
                 m.exibe_matriz(dir=organized_dir,name=f"tail_{idx*step_tail}")
 
-            df.to_csv(csv_path, index=False)
+            df.to_csv(csv_path, index=False,float_format="%.3f")
             print(f"Arquivo salvo: {csv_path}")
 
     
@@ -236,7 +244,8 @@ def main():
                 "uuc_accuracy": metricas["UUC Accuracy"][0],
                 "inner_metric": metricas["inner metric"][0],
                 "outer_metric": metricas["outer metric"][0],
-                "halfpoint": metricas["halfpoint"][0]
+                "halfpoint": metricas["halfpoint"][0],
+                "auroc": metricas["auroc"]
                 }
     
     final_data = []
@@ -256,7 +265,7 @@ def main():
     
     matriz.exibe_matriz(dir=output_dir,name=f"melhor_modelo.png")
 
-    df.to_csv(organized_dir, index=False)
+    df.to_csv(organized_dir, index=False,float_format="%.3f")
     print(f"Arquivo salvo: melhor resultado")
     print(f"Melhores hiperparametros \n {melhores_hiperparametros}")
     
